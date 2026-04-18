@@ -1,38 +1,49 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
 import { Badge, Button, Card, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import { billTotalForItems } from '@/src/utils/billMath';
 
-export default function PumpBilling() {
+export default function PumpCompanyBillingIndex() {
   const router = useRouter();
-  const { bills, transactions, currentUser, pumps } = useApp();
+  const { companyId } = useLocalSearchParams<{ companyId: string }>();
+  const { bills, transactions, currentUser, pumps, getCompany } = useApp();
   const pumpId = currentUser?.pumpId;
   const pump = pumps.find((p) => p.id === pumpId);
+  const company = companyId ? getCompany(companyId) : undefined;
   const [tab, setTab] = useState<'draft' | 'raised' | 'paid'>('draft');
 
   const list = useMemo(() => {
     return bills
-      .filter((b) => b.pumpId === pumpId && b.status === tab)
+      .filter(
+        (b) =>
+          b.pumpId === pumpId &&
+          b.companyId === companyId &&
+          b.status === tab
+      )
       .sort(
         (a, b) =>
           new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()
       );
-  }, [bills, pumpId, tab]);
+  }, [bills, pumpId, companyId, tab]);
 
   return (
     <Screen>
       <View style={styles.head}>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Billing</Text>
-          <Text style={styles.sub}>{pump?.name}</Text>
+          <Text style={styles.sub}>
+            {company?.name ?? ''} · {pump?.name}
+          </Text>
         </View>
         <Button
           title="Raise"
-          onPress={() => router.push(href('/(pump)/billing/new'))}
+          onPress={() =>
+            router.push(href(`/(pump)/${companyId}/billing/new`))
+          }
         />
       </View>
 
@@ -57,7 +68,9 @@ export default function PumpBilling() {
           return (
             <Pressable
               key={b.id}
-              onPress={() => router.push(href(`/(pump)/billing/${b.id}`))}
+              onPress={() =>
+                router.push(href(`/(pump)/${companyId}/billing/${b.id}`))
+              }
             >
               <Card style={styles.card}>
                 <View style={styles.row}>

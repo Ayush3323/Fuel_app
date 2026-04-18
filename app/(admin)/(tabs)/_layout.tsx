@@ -34,6 +34,15 @@ export default function AdminTabs() {
         }}
       />
       <Tabs.Screen
+        name="invites"
+        options={{
+          title: 'Invites',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="key-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="bills"
         options={{
           title: 'Bills',

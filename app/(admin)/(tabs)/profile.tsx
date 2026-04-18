@@ -7,15 +7,18 @@ import { useApp } from '@/src/context/AppContext';
 
 export default function AdminProfile() {
   const router = useRouter();
-  const { currentUser, company, logout } = useApp();
+  const { currentUser, getCompany, logout } = useApp();
+  const company = currentUser?.companyId
+    ? getCompany(currentUser.companyId)
+    : undefined;
 
   return (
     <Screen>
       <Text style={styles.title}>Profile</Text>
       <Card style={styles.card}>
         <Text style={styles.label}>Company</Text>
-        <Text style={styles.val}>{company.name}</Text>
-        {company.gstin ? (
+        <Text style={styles.val}>{company?.name ?? '—'}</Text>
+        {company?.gstin ? (
           <>
             <Text style={[styles.label, { marginTop: 12 }]}>GSTIN</Text>
             <Text style={styles.val}>{company.gstin}</Text>

@@ -2,13 +2,17 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import {
   SEED_BILLS,
-  SEED_COMPANY,
+  SEED_COMPANIES,
+  SEED_INVITES,
+  SEED_LINKS,
   SEED_PUMPS,
   SEED_REQUESTS,
   SEED_TRANSACTIONS,
@@ -18,10 +22,12 @@ import type {
   Bill,
   BillStatus,
   Company,
+  CompanyPumpLink,
   FuelDiscount,
   FuelRequest,
   FuelType,
   Pump,
+  PumpInvite,
   RequestStatus,
   Transaction,
   User,
@@ -32,28 +38,61 @@ function genId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function randomInviteCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
+type RegisterCompanyInput = {
+  name: string;
+  gstin?: string;
+  loginId: string;
+  password: string;
+  ownerDisplayName?: string;
+};
+
+type RegisterPumpInput = {
+  name: string;
+  address: string;
+  contact: string;
+  loginId: string;
+  password: string;
+  ownerDisplayName?: string;
+};
+
 type AppContextValue = {
-  company: Company;
+  companies: Company[];
+  links: CompanyPumpLink[];
+  invites: PumpInvite[];
   users: User[];
   pumps: Pump[];
   requests: FuelRequest[];
   transactions: Transaction[];
   bills: Bill[];
   currentUser: User | null;
+  getCompany: (id: string) => Company | undefined;
+  getPumpsForCompany: (companyId: string) => Pump[];
+  getCompaniesForPump: (pumpId: string) => Company[];
+  isPumpLinkedToCompany: (pumpId: string, companyId: string) => boolean;
   login: (loginId: string, password: string) => User | null;
   logout: () => void;
   devSwitchUser: (loginId: string) => void;
-  createPump: (input: {
-    name: string;
-    address: string;
-    contact: string;
-  }) => { pump: Pump; ownerLoginId: string; ownerPassword: string };
+  registerCompany: (input: RegisterCompanyInput) => User;
+  registerPump: (input: RegisterPumpInput) => User;
+  createInvite: (companyId: string) => PumpInvite;
+  redeemInvite: (
+    code: string,
+    pumpId: string
+  ) => { ok: true; company: Company } | { ok: false; error: string };
   createEmployee: (pumpId: string, name: string) => {
     user: User;
     loginId: string;
     password: string;
   };
   createFuelRequest: (input: {
+    companyId: string;
     pumpId: string;
     vehicleNo: string;
     fuel: FuelType;
@@ -71,7 +110,7 @@ type AppContextValue = {
     advance: number;
     filledByUserId: string;
   }) => Transaction | null;
-  getUnbilledTransactions: (pumpId: string) => Transaction[];
+  getUnbilledTransactions: (pumpId: string, companyId: string) => Transaction[];
   createBillDraft: (input: {
     pumpId: string;
     companyId: string;
@@ -94,7 +133,9 @@ type AppContextValue = {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [company] = useState<Company>(SEED_COMPANY);
+  const [companies, setCompanies] = useState<Company[]>(SEED_COMPANIES);
+  const [links, setLinks] = useState<CompanyPumpLink[]>(SEED_LINKS);
+  const [invites, setInvites] = useState<PumpInvite[]>(SEED_INVITES);
   const [users, setUsers] = useState<User[]>(SEED_USERS);
   const [pumps, setPumps] = useState<Pump[]>(SEED_PUMPS);
   const [requests, setRequests] = useState<FuelRequest[]>(SEED_REQUESTS);
@@ -103,6 +144,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const [bills, setBills] = useState<Bill[]>(SEED_BILLS);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  const companiesRef = useRef(companies);
+  const linksRef = useRef(links);
+  const invitesRef = useRef(invites);
+  useEffect(() => {
+    companiesRef.current = companies;
+  }, [companies]);
+  useEffect(() => {
+    linksRef.current = links;
+  }, [links]);
+  useEffect(() => {
+    invitesRef.current = invites;
+  }, [invites]);
+
+  const getCompany = useCallback(
+    (id: string) => companies.find((c) => c.id === id),
+    [companies]
+  );
+
+  const getPumpsForCompany = useCallback(
+    (companyId: string) => {
+      const pumpIds = new Set(
+        links.filter((l) => l.companyId === companyId && l.active).map((l) => l.pumpId)
+      );
+      return pumps.filter((p) => pumpIds.has(p.id));
+    },
+    [links, pumps]
+  );
+
+  const getCompaniesForPump = useCallback(
+    (pumpId: string) => {
+      const companyIds = links
+        .filter((l) => l.pumpId === pumpId && l.active)
+        .map((l) => l.companyId);
+      return companies.filter((c) => companyIds.includes(c.id));
+    },
+    [links, companies]
+  );
+
+  const isPumpLinkedToCompany = useCallback(
+    (pumpId: string, companyId: string) =>
+      links.some(
+        (l) => l.pumpId === pumpId && l.companyId === companyId && l.active
+      ),
+    [links]
+  );
 
   const login = useCallback((loginId: string, password: string) => {
     const u = users.find(
@@ -127,57 +214,130 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [users]
   );
 
-  const createPump = useCallback(
-    (input: { name: string; address: string; contact: string }) => {
-      const ownerPassword = `p${Math.random().toString(36).slice(2, 8)}`;
-      const ownerLoginId = `pump_${Math.random().toString(36).slice(2, 6)}`;
-      const pumpId = genId('pump');
-      const ownerId = genId('u');
-      const owner: User = {
-        id: ownerId,
-        role: 'pumpOwner',
-        name: `${input.name} Owner`,
-        loginId: ownerLoginId,
-        password: ownerPassword,
+  const registerCompany = useCallback((input: RegisterCompanyInput) => {
+    const companyId = genId('co');
+    const userId = genId('u');
+    const company: Company = {
+      id: companyId,
+      name: input.name.trim(),
+      gstin: input.gstin?.trim() || undefined,
+    };
+    const admin: User = {
+      id: userId,
+      role: 'admin',
+      name: input.ownerDisplayName?.trim() || `${input.name.trim()} Admin`,
+      loginId: input.loginId.trim().toLowerCase(),
+      password: input.password,
+      companyId,
+    };
+    setCompanies((prev) => [...prev, company]);
+    setUsers((prev) => [...prev, admin]);
+    setCurrentUser(admin);
+    return admin;
+  }, []);
+
+  const registerPump = useCallback((input: RegisterPumpInput) => {
+    const pumpId = genId('pump');
+    const ownerId = genId('u');
+    const pump: Pump = {
+      id: pumpId,
+      name: input.name.trim(),
+      address: input.address.trim(),
+      contact: input.contact.trim(),
+      ownerUserId: ownerId,
+    };
+    const owner: User = {
+      id: ownerId,
+      role: 'pumpOwner',
+      name: input.ownerDisplayName?.trim() || `${input.name.trim()} Owner`,
+      loginId: input.loginId.trim().toLowerCase(),
+      password: input.password,
+      pumpId,
+    };
+    setPumps((prev) => [...prev, pump]);
+    setUsers((prev) => [...prev, owner]);
+    setCurrentUser(owner);
+    return owner;
+  }, []);
+
+  const createInvite = useCallback((companyId: string) => {
+    let code = randomInviteCode();
+    while (invitesRef.current.some((i) => i.code === code)) {
+      code = randomInviteCode();
+    }
+    const inv: PumpInvite = {
+      id: genId('inv'),
+      companyId,
+      code,
+      createdAt: new Date().toISOString(),
+    };
+    setInvites((p) => [...p, inv]);
+    return inv;
+  }, []);
+
+  const redeemInvite = useCallback(
+    (code: string, pumpId: string): { ok: true; company: Company } | { ok: false; error: string } => {
+      const normalized = code.trim().toUpperCase();
+      if (!normalized) return { ok: false, error: 'Enter a code' };
+
+      const inv = invitesRef.current.find(
+        (i) => i.code.toUpperCase() === normalized && !i.redeemedByPumpId
+      );
+      if (!inv) return { ok: false, error: 'Invalid or already used code' };
+
+      const company = companiesRef.current.find((c) => c.id === inv.companyId);
+      if (!company) return { ok: false, error: 'Company not found' };
+
+      if (
+        linksRef.current.some(
+          (l) => l.companyId === inv.companyId && l.pumpId === pumpId && l.active
+        )
+      ) {
+        return { ok: false, error: 'Already connected to this company' };
+      }
+
+      const link: CompanyPumpLink = {
+        id: genId('link'),
+        companyId: inv.companyId,
         pumpId,
-        companyId: company.id,
+        joinedAt: new Date().toISOString(),
+        active: true,
       };
-      const pump: Pump = {
-        id: pumpId,
-        companyId: company.id,
-        name: input.name,
-        address: input.address,
-        contact: input.contact,
-        ownerUserId: ownerId,
-      };
-      setUsers((prev) => [...prev, owner]);
-      setPumps((prev) => [...prev, pump]);
-      return { pump, ownerLoginId, ownerPassword };
+      setLinks((prev) => [...prev, link]);
+      setInvites((prev) =>
+        prev.map((i) =>
+          i.id === inv.id
+            ? {
+                ...i,
+                redeemedByPumpId: pumpId,
+                redeemedAt: new Date().toISOString(),
+              }
+            : i
+        )
+      );
+      return { ok: true, company };
     },
-    [company.id]
+    []
   );
 
-  const createEmployee = useCallback(
-    (pumpId: string, name: string) => {
-      const password = `e${Math.random().toString(36).slice(2, 8)}`;
-      const loginId = `emp_${Math.random().toString(36).slice(2, 6)}`;
-      const user: User = {
-        id: genId('u'),
-        role: 'employee',
-        name,
-        loginId,
-        password,
-        pumpId,
-        companyId: company.id,
-      };
-      setUsers((prev) => [...prev, user]);
-      return { user, loginId, password };
-    },
-    [company.id]
-  );
+  const createEmployee = useCallback((pumpId: string, name: string) => {
+    const password = `e${Math.random().toString(36).slice(2, 8)}`;
+    const loginId = `emp_${Math.random().toString(36).slice(2, 6)}`;
+    const user: User = {
+      id: genId('u'),
+      role: 'employee',
+      name,
+      loginId,
+      password,
+      pumpId,
+    };
+    setUsers((prev) => [...prev, user]);
+    return { user, loginId, password };
+  }, []);
 
   const createFuelRequest = useCallback(
     (input: {
+      companyId: string;
       pumpId: string;
       vehicleNo: string;
       fuel: FuelType;
@@ -186,6 +346,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }) => {
       const r: FuelRequest = {
         id: genId('req'),
+        companyId: input.companyId,
         pumpId: input.pumpId,
         vehicleNo: input.vehicleNo.trim().toUpperCase(),
         fuel: input.fuel,
@@ -218,6 +379,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const txn: Transaction = {
         id: genId('txn'),
         requestId: req.id,
+        companyId: req.companyId,
         pumpId: req.pumpId,
         vehicleNo: req.vehicleNo,
         fuel: req.fuel,
@@ -251,8 +413,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const getUnbilledTransactions = useCallback(
-    (pumpId: string) =>
-      transactions.filter((t) => t.pumpId === pumpId && !t.billId),
+    (pumpId: string, companyId: string) =>
+      transactions.filter(
+        (t) => t.pumpId === pumpId && t.companyId === companyId && !t.billId
+      ),
     [transactions]
   );
 
@@ -338,17 +502,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppContextValue>(
     () => ({
-      company,
+      companies,
+      links,
+      invites,
       users,
       pumps,
       requests,
       transactions,
       bills,
       currentUser,
+      getCompany,
+      getPumpsForCompany,
+      getCompaniesForPump,
+      isPumpLinkedToCompany,
       login,
       logout,
       devSwitchUser,
-      createPump,
+      registerCompany,
+      registerPump,
+      createInvite,
+      redeemInvite,
       createEmployee,
       createFuelRequest,
       fillFuelRequest,
@@ -360,17 +533,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       assignTransactionsToBill,
     }),
     [
-      company,
+      companies,
+      links,
+      invites,
       users,
       pumps,
       requests,
       transactions,
       bills,
       currentUser,
+      getCompany,
+      getPumpsForCompany,
+      getCompaniesForPump,
+      isPumpLinkedToCompany,
       login,
       logout,
       devSwitchUser,
-      createPump,
+      registerCompany,
+      registerPump,
+      createInvite,
+      redeemInvite,
       createEmployee,
       createFuelRequest,
       fillFuelRequest,
@@ -392,22 +574,23 @@ export function useApp() {
   return ctx;
 }
 
-export function useOutstandingForPump(pumpId: string) {
+export function useOutstandingForLink(pumpId: string, companyId: string) {
   const { transactions, bills } = useApp();
   return useMemo(() => {
     let owed = 0;
     for (const b of bills) {
-      if (b.pumpId !== pumpId) continue;
+      if (b.pumpId !== pumpId || b.companyId !== companyId) continue;
       if (b.status === 'paid') continue;
       const parts = billTotalForItems(b, transactions);
       owed += parts.totalDue;
     }
     const unbilled = transactions.filter(
-      (t) => t.pumpId === pumpId && !t.billId
+      (t) =>
+        t.pumpId === pumpId && t.companyId === companyId && !t.billId
     );
     for (const t of unbilled) {
       owed += t.gross + t.extraCash + t.advance;
     }
     return Math.round(owed * 100) / 100;
-  }, [pumpId, transactions, bills]);
+  }, [pumpId, companyId, transactions, bills]);
 }

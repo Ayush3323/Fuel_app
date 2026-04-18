@@ -10,13 +10,5 @@ export default function PumpStackLayout() {
   if (currentUser.role === 'employee')
     return <Redirect href={href('/(employee)/(tabs)/pending')} />;
 
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="fill/[requestId]" />
-      <Stack.Screen name="billing/new" />
-      <Stack.Screen name="billing/[id]" />
-      <Stack.Screen name="team/new" />
-    </Stack>
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

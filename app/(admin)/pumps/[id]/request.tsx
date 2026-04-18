@@ -9,7 +9,9 @@ import type { FuelType } from '@/src/types';
 export default function NewRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { createFuelRequest, company } = useApp();
+  const { createFuelRequest, currentUser, getCompany } = useApp();
+  const companyId = currentUser?.companyId ?? '';
+  const company = getCompany(companyId);
   const [vehicleNo, setVehicleNo] = useState('');
   const [qty, setQty] = useState('');
   const [fuel, setFuel] = useState<FuelType>('HSD');
@@ -22,6 +24,7 @@ export default function NewRequestScreen() {
       return;
     }
     createFuelRequest({
+      companyId,
       pumpId: id!,
       vehicleNo,
       fuel,
@@ -37,7 +40,7 @@ export default function NewRequestScreen() {
     <Screen>
       <Header title="Fuel request" />
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.co}>{company.name}</Text>
+        <Text style={styles.co}>{company?.name}</Text>
         <Input
           label="Vehicle number"
           value={vehicleNo}

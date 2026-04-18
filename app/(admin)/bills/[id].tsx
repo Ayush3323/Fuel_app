@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Alert, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
 import { BillView, Button, Header, Input, Screen } from '@/src/components/ui';
@@ -9,14 +16,15 @@ import { billTotalForItems } from '@/src/utils/billMath';
 export default function AdminBillDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { bills, pumps, transactions, company, markBillPaid } = useApp();
+  const { bills, pumps, transactions, getCompany, markBillPaid } = useApp();
   const bill = bills.find((b) => b.id === id);
   const pump = pumps.find((p) => p.id === bill?.pumpId);
+  const company = bill ? getCompany(bill.companyId) : undefined;
   const [modal, setModal] = useState(false);
   const [refNo, setRefNo] = useState('');
   const [proof, setProof] = useState('');
 
-  if (!bill || !pump) {
+  if (!bill || !pump || !company) {
     return (
       <Screen>
         <Header title="Bill" />

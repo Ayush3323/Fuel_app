@@ -16,11 +16,18 @@ import { useApp } from '@/src/context/AppContext';
 const MOCK_URI = 'https://picsum.photos/seed/fuel/400/300';
 
 export function FillFuelScreen() {
-  const { requestId } = useLocalSearchParams<{ requestId: string }>();
+  const { requestId, companyId: routeCompanyId } = useLocalSearchParams<{
+    requestId: string;
+    companyId?: string;
+  }>();
   const router = useRouter();
   const { requests, fillFuelRequest, currentUser, pumps } = useApp();
   const req = requests.find((r) => r.id === requestId);
   const pump = pumps.find((p) => p.id === req?.pumpId);
+  const companyMismatch =
+    !!routeCompanyId &&
+    !!req &&
+    req.companyId !== routeCompanyId;
 
   const [qty, setQty] = useState('');
   const [rate, setRate] = useState('');
@@ -65,11 +72,13 @@ export function FillFuelScreen() {
     ]);
   };
 
-  if (!req) {
+  if (!req || companyMismatch) {
     return (
       <Screen>
         <Header title="Fill fuel" />
-        <Text style={styles.miss}>Request not found</Text>
+        <Text style={styles.miss}>
+          {companyMismatch ? 'Request not for this company' : 'Request not found'}
+        </Text>
       </Screen>
     );
   }

@@ -25,6 +25,8 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="login" />
+          <Stack.Screen name="register-company" />
+          <Stack.Screen name="register-pump" />
           <Stack.Screen name="(admin)" />
           <Stack.Screen name="(pump)" />
           <Stack.Screen name="(employee)" />

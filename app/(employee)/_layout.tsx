@@ -8,12 +8,7 @@ export default function EmployeeStackLayout() {
   if (currentUser.role === 'admin')
     return <Redirect href={href('/(admin)/(tabs)/dashboard')} />;
   if (currentUser.role === 'pumpOwner')
-    return <Redirect href={href('/(pump)/(tabs)/requests')} />;
+    return <Redirect href={href('/(pump)/(home)/companies')} />;
 
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="fill/[requestId]" />
-    </Stack>
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

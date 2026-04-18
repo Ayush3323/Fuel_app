@@ -4,29 +4,36 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
 import { Button, Card, Header, Screen, SectionTitle, StatTile } from '@/src/components/ui';
-import { useApp, useOutstandingForPump } from '@/src/context/AppContext';
+import { useApp, useOutstandingForLink } from '@/src/context/AppContext';
 
 export default function PumpDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { pumps, requests, transactions } = useApp();
+  const { pumps, requests, transactions, currentUser } = useApp();
+  const companyId = currentUser?.companyId ?? '';
   const pump = pumps.find((p) => p.id === id);
-  const outstanding = useOutstandingForPump(id ?? '');
+  const outstanding = useOutstandingForLink(id ?? '', companyId);
 
   const pending = useMemo(
-    () => requests.filter((r) => r.pumpId === id && r.status === 'pending'),
-    [requests, id]
+    () =>
+      requests.filter(
+        (r) =>
+          r.pumpId === id &&
+          r.companyId === companyId &&
+          r.status === 'pending'
+      ),
+    [requests, id, companyId]
   );
 
   const txns = useMemo(
     () =>
       transactions
-        .filter((t) => t.pumpId === id)
+        .filter((t) => t.pumpId === id && t.companyId === companyId)
         .sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         ),
-    [transactions, id]
+    [transactions, id, companyId]
   );
 
   if (!pump) {

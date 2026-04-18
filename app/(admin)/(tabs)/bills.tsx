@@ -9,23 +9,27 @@ import { billTotalForItems } from '@/src/utils/billMath';
 
 export default function BillsList() {
   const router = useRouter();
-  const { bills, pumps, transactions, company } = useApp();
+  const { bills, pumps, transactions, currentUser, getCompany } = useApp();
+  const companyId = currentUser?.companyId;
+  const company = companyId ? getCompany(companyId) : undefined;
   const [tab, setTab] = useState<'pending' | 'paid'>('pending');
 
   const list = useMemo(() => {
-    const f = bills.filter((b) =>
-      tab === 'pending' ? b.status === 'raised' : b.status === 'paid'
+    const f = bills.filter(
+      (b) =>
+        b.companyId === companyId &&
+        (tab === 'pending' ? b.status === 'raised' : b.status === 'paid')
     );
     return f.sort(
       (a, b) =>
         new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()
     );
-  }, [bills, tab]);
+  }, [bills, tab, companyId]);
 
   return (
     <Screen>
       <Text style={styles.title}>Bills</Text>
-      <Text style={styles.sub}>{company.name}</Text>
+      <Text style={styles.sub}>{company?.name ?? '—'}</Text>
 
       <View style={styles.tabs}>
         <Pressable

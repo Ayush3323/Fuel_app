@@ -7,11 +7,12 @@ import { billTotalForItems } from '@/src/utils/billMath';
 
 export default function PumpBillDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { bills, pumps, transactions, company } = useApp();
+  const { bills, pumps, transactions, getCompany } = useApp();
   const bill = bills.find((b) => b.id === id);
   const pump = pumps.find((p) => p.id === bill?.pumpId);
+  const company = bill ? getCompany(bill.companyId) : undefined;
 
-  if (!bill || !pump) {
+  if (!bill || !pump || !company) {
     return (
       <Screen>
         <Header title="Bill" />

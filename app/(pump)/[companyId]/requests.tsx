@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
 import {
@@ -15,14 +15,25 @@ import {
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
-export default function EmployeePending() {
+export default function PumpCompanyRequests() {
   const router = useRouter();
+  const { companyId } = useLocalSearchParams<{ companyId: string }>();
   const { requests, currentUser, pumps, getCompany, getCompaniesForPump } = useApp();
   const pumpId = currentUser?.pumpId ?? '';
   const pump = pumps.find((p) => p.id === pumpId);
   const linked = getCompaniesForPump(pumpId);
-  const [filter, setFilter] = useState<'all' | string>('all');
+  const [filter, setFilter] = useState<'all' | string>(() =>
+    companyId && linked.some((c) => c.id === companyId) ? companyId : 'all'
+  );
   const [q, setQ] = useState('');
+
+  useEffect(() => {
+    if (!companyId || !pumpId) return;
+    const next = getCompaniesForPump(pumpId);
+    if (next.some((c) => c.id === companyId)) {
+      setFilter(companyId);
+    }
+  }, [companyId, pumpId, getCompaniesForPump]);
 
   const list = useMemo(() => {
     let rows = requests.filter(
@@ -40,7 +51,7 @@ export default function EmployeePending() {
 
   return (
     <Screen>
-      <Text style={styles.title}>Pending</Text>
+      <Text style={styles.title}>Pending requests</Text>
       <Text style={styles.sub}>{pump?.name}</Text>
       <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
       <View style={styles.search}>
@@ -51,27 +62,39 @@ export default function EmployeePending() {
           placeholder="e.g. HR55"
         />
       </View>
-      <SectionTitle title="Your queue" />
+      <SectionTitle title="Awaiting fill" />
       <FlatList
         data={list}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <EmptyState title="No pending requests" subtitle="Wait for company requests" />
+          <EmptyState
+            title="No pending requests"
+            subtitle={
+              filter === 'all'
+                ? 'No transport companies have queued work for this pump'
+                : 'Nothing queued for this company on your pump'
+            }
+          />
         }
         renderItem={({ item }) => {
           const co = getCompany(item.companyId);
+          const showCo = filter === 'all';
           return (
             <Pressable
-              onPress={() => router.push(href(`/(employee)/fill/${item.id}`))}
+              onPress={() =>
+                router.push(href(`/(pump)/${item.companyId}/fill/${item.id}`))
+              }
             >
               <Card style={styles.card}>
                 <View style={styles.row}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.coTag}>{co?.name ?? 'Company'}</Text>
+                    {showCo ? (
+                      <Text style={styles.coTag}>{co?.name ?? 'Company'}</Text>
+                    ) : null}
                     <Text style={styles.v}>{item.vehicleNo}</Text>
                     <FuelTypePill fuel={item.fuel} />
-                    <Text style={styles.meta}>{item.qty} L</Text>
+                    <Text style={styles.meta}>{item.qty} L requested</Text>
                   </View>
                   <Badge status="pending" />
                 </View>

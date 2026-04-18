@@ -4,22 +4,27 @@ import { href } from '@/src/utils/routerHref';
 import { Ionicons } from '@expo/vector-icons';
 import { FuelColors } from '@/constants/theme';
 import { Card, Screen, SectionTitle } from '@/src/components/ui';
-import { useApp, useOutstandingForPump } from '@/src/context/AppContext';
+import { useApp, useOutstandingForLink } from '@/src/context/AppContext';
 
 function PumpRow({
   id,
   name,
   address,
+  companyId,
 }: {
   id: string;
   name: string;
   address: string;
+  companyId: string;
 }) {
   const router = useRouter();
-  const outstanding = useOutstandingForPump(id);
+  const outstanding = useOutstandingForLink(id, companyId);
   const { requests } = useApp();
   const pending = requests.filter(
-    (r) => r.pumpId === id && r.status === 'pending'
+    (r) =>
+      r.pumpId === id &&
+      r.companyId === companyId &&
+      r.status === 'pending'
   ).length;
 
   return (
@@ -42,25 +47,32 @@ function PumpRow({
 }
 
 export default function PumpsList() {
-  const router = useRouter();
-  const { pumps } = useApp();
+  const { currentUser, getPumpsForCompany } = useApp();
+  const companyId = currentUser?.companyId ?? '';
+  const pumps = getPumpsForCompany(companyId);
 
   return (
     <Screen>
       <View style={styles.header}>
         <Text style={styles.title}>Petrol pumps</Text>
-        <Pressable
-          onPress={() => router.push(href('/(admin)/pumps/new'))}
-          style={styles.addBtn}
-        >
-          <Ionicons name="add" size={24} color="#fff" />
-        </Pressable>
       </View>
-      <SectionTitle title="Connected pumps" />
+      <Text style={styles.note}>
+        Pumps join via invite code. Generate codes in the Invites tab.
+      </Text>
+      <SectionTitle title="Linked pumps" />
       <ScrollView contentContainerStyle={styles.list}>
         {pumps.map((p) => (
-          <PumpRow key={p.id} id={p.id} name={p.name} address={p.address} />
+          <PumpRow
+            key={p.id}
+            id={p.id}
+            name={p.name}
+            address={p.address}
+            companyId={companyId}
+          />
         ))}
+        {pumps.length === 0 ? (
+          <Text style={styles.empty}>No pumps linked yet. Share an invite code.</Text>
+        ) : null}
       </ScrollView>
     </Screen>
   );
@@ -68,21 +80,16 @@ export default function PumpsList() {
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
   },
   title: { fontSize: 26, fontWeight: '800', color: FuelColors.text },
-  addBtn: {
-    backgroundColor: FuelColors.primary,
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+  note: {
+    paddingHorizontal: 20,
+    color: FuelColors.textSecondary,
+    fontSize: 13,
+    marginBottom: 8,
   },
   list: { paddingHorizontal: 16, paddingBottom: 32 },
   card: { marginBottom: 12 },
@@ -90,4 +97,5 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: '700', color: FuelColors.text },
   addr: { color: FuelColors.textSecondary, marginTop: 4, fontSize: 13 },
   sub: { color: FuelColors.primary, marginTop: 8, fontSize: 13, fontWeight: '600' },
+  empty: { textAlign: 'center', color: FuelColors.textMuted, padding: 24 },
 });

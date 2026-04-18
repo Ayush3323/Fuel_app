@@ -1,8 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Tabs, useLocalSearchParams } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
+import { useApp } from '@/src/context/AppContext';
 
-export default function PumpTabs() {
+export default function PumpCompanyTabs() {
+  const { companyId } = useLocalSearchParams<{ companyId: string }>();
+  const { getCompany } = useApp();
+  const co = companyId ? getCompany(companyId) : undefined;
+
   return (
     <Tabs
       screenOptions={{
@@ -18,7 +23,7 @@ export default function PumpTabs() {
       <Tabs.Screen
         name="requests"
         options={{
-          title: 'Requests',
+          title: co?.name?.slice(0, 12) ?? 'Requests',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="flash-outline" size={size} color={color} />
           ),
@@ -42,24 +47,7 @@ export default function PumpTabs() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="team"
-        options={{
-          title: 'Team',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="fill" options={{ href: null }} />
     </Tabs>
   );
 }

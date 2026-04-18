@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
 import {
   Card,
+  CompanyFilterBar,
   EmptyState,
   FuelTypePill,
   Input,
@@ -13,15 +14,32 @@ import {
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
-export default function PumpCompleted() {
+export default function PumpCompanyCompleted() {
   const router = useRouter();
-  const { transactions, currentUser, pumps, users } = useApp();
-  const pumpId = currentUser?.pumpId;
+  const { companyId } = useLocalSearchParams<{ companyId: string }>();
+  const { transactions, currentUser, pumps, users, getCompany, getCompaniesForPump } =
+    useApp();
+  const pumpId = currentUser?.pumpId ?? '';
   const pump = pumps.find((p) => p.id === pumpId);
+  const linked = getCompaniesForPump(pumpId);
+  const [filter, setFilter] = useState<'all' | string>(() =>
+    companyId && linked.some((c) => c.id === companyId) ? companyId : 'all'
+  );
   const [q, setQ] = useState('');
 
+  useEffect(() => {
+    if (!companyId || !pumpId) return;
+    const next = getCompaniesForPump(pumpId);
+    if (next.some((c) => c.id === companyId)) {
+      setFilter(companyId);
+    }
+  }, [companyId, pumpId, getCompaniesForPump]);
+
   const list = useMemo(() => {
-    let t = transactions.filter((x) => x.pumpId === pumpId);
+    let t = transactions.filter(
+      (x) =>
+        x.pumpId === pumpId && (filter === 'all' || x.companyId === filter)
+    );
     if (q.trim()) {
       const qq = q.trim().toLowerCase();
       t = t.filter((x) => x.vehicleNo.toLowerCase().includes(qq));
@@ -30,12 +48,13 @@ export default function PumpCompleted() {
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [transactions, pumpId, q]);
+  }, [transactions, pumpId, filter, q]);
 
   return (
     <Screen>
-      <Text style={styles.title}>Completed fillings</Text>
+      <Text style={styles.title}>Completed</Text>
       <Text style={styles.sub}>{pump?.name}</Text>
+      <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
       <View style={styles.search}>
         <Input
           label="Search vehicle"
@@ -44,7 +63,7 @@ export default function PumpCompleted() {
           placeholder="e.g. HR55"
         />
       </View>
-      <SectionTitle title="All transactions (tap to include in bill)" />
+      <SectionTitle title="Transactions" />
       <FlatList
         data={list}
         keyExtractor={(item) => item.id}
@@ -54,8 +73,13 @@ export default function PumpCompleted() {
         }
         renderItem={({ item }) => {
           const filler = users.find((u) => u.id === item.filledByUserId);
+          const co = getCompany(item.companyId);
+          const showCo = filter === 'all';
           return (
             <Card style={styles.card}>
+              {showCo ? (
+                <Text style={styles.coTag}>{co?.name ?? 'Company'}</Text>
+              ) : null}
               <Text style={styles.v}>{item.vehicleNo}</Text>
               <FuelTypePill fuel={item.fuel} />
               <Text style={styles.meta}>
@@ -66,7 +90,11 @@ export default function PumpCompleted() {
               <Text
                 style={styles.link}
                 onPress={() =>
-                  router.push(href(`/(pump)/billing/new?preselect=${item.id}`))
+                  router.push(
+                    href(
+                      `/(pump)/${item.companyId}/billing/new?preselect=${item.id}`
+                    )
+                  )
                 }
               >
                 Use in new bill →
@@ -91,6 +119,12 @@ const styles = StyleSheet.create({
   search: { paddingHorizontal: 16, marginBottom: 4 },
   list: { paddingHorizontal: 16, paddingBottom: 32 },
   card: { marginBottom: 12 },
+  coTag: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: FuelColors.primary,
+    marginBottom: 6,
+  },
   v: { fontWeight: '800', fontSize: 16, color: FuelColors.text },
   meta: { marginTop: 6, color: FuelColors.textSecondary, fontSize: 13 },
   by: { marginTop: 6, fontSize: 12, color: FuelColors.textMuted },

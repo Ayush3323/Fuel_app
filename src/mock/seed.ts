@@ -1,26 +1,77 @@
 import type {
   Bill,
   Company,
+  CompanyPumpLink,
   FuelRequest,
   Pump,
+  PumpInvite,
   Transaction,
   User,
 } from '@/src/types';
 
-export const SEED_COMPANY: Company = {
-  id: 'co1',
-  name: 'Karma Cargo Movers',
-  gstin: '06XXXXX1234X1ZX',
-};
+export const SEED_COMPANIES: Company[] = [
+  {
+    id: 'co1',
+    name: 'Karma Cargo Movers',
+    gstin: '06XXXXX1234X1ZX',
+  },
+  {
+    id: 'co2',
+    name: 'Shree Logistics',
+    gstin: '09YYYYY5678Y2ZY',
+  },
+];
+
+export const SEED_LINKS: CompanyPumpLink[] = [
+  {
+    id: 'link-co1-p1',
+    companyId: 'co1',
+    pumpId: 'p1',
+    joinedAt: new Date(Date.now() - 86400000 * 30).toISOString(),
+    active: true,
+  },
+  {
+    id: 'link-co1-p2',
+    companyId: 'co1',
+    pumpId: 'p2',
+    joinedAt: new Date(Date.now() - 86400000 * 20).toISOString(),
+    active: true,
+  },
+  {
+    id: 'link-co2-p1',
+    companyId: 'co2',
+    pumpId: 'p1',
+    joinedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+    active: true,
+  },
+];
+
+/** Active unredeemed invite for co2 — pump can join with ABC123 in demo */
+export const SEED_INVITES: PumpInvite[] = [
+  {
+    id: 'inv-demo-co2',
+    companyId: 'co2',
+    code: 'ABC123',
+    createdAt: new Date().toISOString(),
+  },
+];
 
 export const SEED_USERS: User[] = [
   {
     id: 'u-admin',
     role: 'admin',
-    name: 'Company Owner',
+    name: 'Karma Owner',
     loginId: 'admin',
     password: 'admin123',
     companyId: 'co1',
+  },
+  {
+    id: 'u-admin-co2',
+    role: 'admin',
+    name: 'Shree Owner',
+    loginId: 'shree',
+    password: 'shree123',
+    companyId: 'co2',
   },
   {
     id: 'u-pump1',
@@ -29,7 +80,6 @@ export const SEED_USERS: User[] = [
     loginId: 'pump1',
     password: 'pump123',
     pumpId: 'p1',
-    companyId: 'co1',
   },
   {
     id: 'u-pump2',
@@ -38,7 +88,6 @@ export const SEED_USERS: User[] = [
     loginId: 'pump2',
     password: 'pump123',
     pumpId: 'p2',
-    companyId: 'co1',
   },
   {
     id: 'u-emp1',
@@ -47,14 +96,12 @@ export const SEED_USERS: User[] = [
     loginId: 'emp1',
     password: 'emp123',
     pumpId: 'p1',
-    companyId: 'co1',
   },
 ];
 
 export const SEED_PUMPS: Pump[] = [
   {
     id: 'p1',
-    companyId: 'co1',
     name: 'HPE Filling Station',
     address: 'Sector 59, Ballabgarh',
     contact: '+91 98765 43210',
@@ -62,7 +109,6 @@ export const SEED_PUMPS: Pump[] = [
   },
   {
     id: 'p2',
-    companyId: 'co1',
     name: 'HP Ellar Filling Station',
     address: 'Ballabgarh',
     contact: '+91 91234 56789',
@@ -73,6 +119,7 @@ export const SEED_PUMPS: Pump[] = [
 export const SEED_REQUESTS: FuelRequest[] = [
   {
     id: 'req-old1',
+    companyId: 'co1',
     pumpId: 'p1',
     vehicleNo: 'HR55XY1111',
     fuel: 'HSD',
@@ -83,6 +130,7 @@ export const SEED_REQUESTS: FuelRequest[] = [
   },
   {
     id: 'req-old2',
+    companyId: 'co1',
     pumpId: 'p1',
     vehicleNo: 'HR55AB8888',
     fuel: 'MS',
@@ -93,6 +141,7 @@ export const SEED_REQUESTS: FuelRequest[] = [
   },
   {
     id: 'req1',
+    companyId: 'co1',
     pumpId: 'p1',
     vehicleNo: 'HR55AB9044',
     fuel: 'HSD',
@@ -103,6 +152,7 @@ export const SEED_REQUESTS: FuelRequest[] = [
   },
   {
     id: 'req2',
+    companyId: 'co1',
     pumpId: 'p1',
     vehicleNo: 'DL01CA1234',
     fuel: 'MS',
@@ -111,7 +161,30 @@ export const SEED_REQUESTS: FuelRequest[] = [
     createdAt: new Date(Date.now() - 7200000).toISOString(),
   },
   {
+    id: 'req-shree-pending',
+    companyId: 'co2',
+    pumpId: 'p1',
+    vehicleNo: 'MH12KC7777',
+    fuel: 'HSD',
+    qty: 200,
+    status: 'pending',
+    notes: 'Shree Logistics',
+    createdAt: new Date(Date.now() - 5400000).toISOString(),
+  },
+  {
+    id: 'req-shree-filled',
+    companyId: 'co2',
+    pumpId: 'p1',
+    vehicleNo: 'DL03SH1111',
+    fuel: 'MS',
+    qty: 30,
+    status: 'filled',
+    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    txnId: 'txn-shree-co2',
+  },
+  {
     id: 'req3',
+    companyId: 'co1',
     pumpId: 'p2',
     vehicleNo: 'HR38T9999',
     fuel: 'HSD',
@@ -121,6 +194,7 @@ export const SEED_REQUESTS: FuelRequest[] = [
   },
   {
     id: 'req4',
+    companyId: 'co1',
     pumpId: 'p1',
     vehicleNo: 'HR55AB9044',
     fuel: 'HSD',
@@ -134,6 +208,7 @@ export const SEED_REQUESTS: FuelRequest[] = [
 const t1: Transaction = {
   id: 'txn1',
   requestId: 'req-old1',
+  companyId: 'co1',
   pumpId: 'p1',
   vehicleNo: 'HR55XY1111',
   fuel: 'HSD',
@@ -151,6 +226,7 @@ const t1: Transaction = {
 const t2: Transaction = {
   id: 'txn2',
   requestId: 'req-old2',
+  companyId: 'co1',
   pumpId: 'p1',
   vehicleNo: 'HR55AB8888',
   fuel: 'MS',
@@ -165,10 +241,10 @@ const t2: Transaction = {
   billId: 'bill1',
 };
 
-/** Unbilled sample for "Raise bill" demo */
 const t3: Transaction = {
   id: 'txn-unbilled-1',
   requestId: 'req4',
+  companyId: 'co1',
   pumpId: 'p1',
   vehicleNo: 'HR55AB9044',
   fuel: 'HSD',
@@ -182,7 +258,24 @@ const t3: Transaction = {
   filledByUserId: 'u-emp1',
 };
 
-export const SEED_TRANSACTIONS: Transaction[] = [t1, t2, t3];
+const tShreeCo2: Transaction = {
+  id: 'txn-shree-co2',
+  requestId: 'req-shree-filled',
+  companyId: 'co2',
+  pumpId: 'p1',
+  vehicleNo: 'DL03SH1111',
+  fuel: 'MS',
+  actualQty: 30.2,
+  rate: 96.1,
+  gross: 2902.22,
+  extraCash: 0,
+  advance: 0,
+  voucherNo: 'SHR/MS/001',
+  createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+  filledByUserId: 'u-emp1',
+};
+
+export const SEED_TRANSACTIONS: Transaction[] = [t1, t2, t3, tShreeCo2];
 
 export const SEED_BILLS: Bill[] = [
   {
@@ -202,3 +295,6 @@ export const SEED_BILLS: Bill[] = [
     status: 'raised',
   },
 ];
+
+/** @deprecated use SEED_COMPANIES[0] */
+export const SEED_COMPANY = SEED_COMPANIES[0];

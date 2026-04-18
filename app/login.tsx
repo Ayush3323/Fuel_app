@@ -16,7 +16,8 @@ import { useApp } from '@/src/context/AppContext';
 import type { Role } from '@/src/types';
 
 const DEV_USERS: { label: string; loginId: string; role: Role }[] = [
-  { label: 'Company', loginId: 'admin', role: 'admin' },
+  { label: 'Karma Co', loginId: 'admin', role: 'admin' },
+  { label: 'Shree Co', loginId: 'shree', role: 'admin' },
   { label: 'Pump 1', loginId: 'pump1', role: 'pumpOwner' },
   { label: 'Pump 2', loginId: 'pump2', role: 'pumpOwner' },
   { label: 'Employee', loginId: 'emp1', role: 'employee' },
@@ -24,7 +25,7 @@ const DEV_USERS: { label: string; loginId: string; role: Role }[] = [
 
 function routeForRole(role: Role): Href {
   if (role === 'admin') return href('/(admin)/(tabs)/dashboard');
-  if (role === 'pumpOwner') return href('/(pump)/(tabs)/requests');
+  if (role === 'pumpOwner') return href('/(pump)/(home)/companies');
   return href('/(employee)/(tabs)/pending');
 }
 
@@ -83,6 +84,19 @@ export default function LoginScreen() {
             <Button title="Sign in" onPress={onLogin} />
           </Card>
 
+          <View style={styles.regRow}>
+            <Button
+              title="Register company"
+              variant="secondary"
+              onPress={() => router.push(href('/register-company'))}
+            />
+            <Button
+              title="Register pump"
+              variant="secondary"
+              onPress={() => router.push(href('/register-pump'))}
+            />
+          </View>
+
           <Text style={styles.devTitle}>Dev: jump as</Text>
           <View style={styles.chips}>
             {DEV_USERS.map((d) => (
@@ -122,8 +136,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 24,
   },
-  card: { marginBottom: 24 },
+  card: { marginBottom: 16 },
   err: { color: FuelColors.danger, marginBottom: 12, fontSize: 14 },
+  regRow: { gap: 10, marginBottom: 24 },
   devTitle: {
     fontSize: 12,
     fontWeight: '700',

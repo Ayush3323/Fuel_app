@@ -1,6 +1,6 @@
 # Fuel Credit (UI demo)
 
-UI-only **Fuel Credit Management** app for transport companies and petrol pumps: fuel requests, fill confirmation with photos, ledger-style billing (HSD/MS split, per-fuel discounts), and bill payment marking.
+UI-only **Fuel Credit Management**: companies and pumps **self-register**; companies **invite pumps** with a 6-character code; pumps **join** from their Companies screen. Fuel requests, fills, and bills are scoped to `(companyId, pumpId)`.
 
 ## Run
 
@@ -9,26 +9,29 @@ npm install
 npx expo start
 ```
 
-## Demo logins
+## Demo logins (seeded)
 
 | Role | User ID | Password |
 |------|---------|----------|
-| Company owner | `admin` | `admin123` |
+| Company (Karma) | `admin` | `admin123` |
+| Company (Shree) | `shree` | `shree123` |
 | Pump owner (HPE) | `pump1` | `pump123` |
 | Pump owner (Ellar) | `pump2` | `pump123` |
-| Pump employee | `emp1` | `emp123` |
+| Employee (on HPE) | `emp1` | `emp123` |
 
-On the login screen, **Dev: jump as** switches role without typing a password.
+**Dev chips** on the login screen switch users without a password.
+
+## Join flow (demo)
+
+- Pump `p1` starts linked only to **Karma** (`co1`). Use **Invites** on the Shree company (`shree`) to generate a code, or use the pre-seeded unused code **`ABC123`** (company Shree) on the pump’s **Join** screen to link Shree.
+- After redeeming, Shree appears on the pump’s **Companies** list; open it for per-company requests / billing.
+
+## Register (new accounts)
+
+From login: **Register company** or **Register pump** (in-memory; no backend).
 
 ## Stack
 
-- Expo Router (file routes)
-- React Native + TypeScript
-- In-memory mock state: [`src/context/AppContext.tsx`](src/context/AppContext.tsx)
-
-## Project layout
-
-- `app/(admin)/` — company owner (dashboard, pumps, bills)
-- `app/(pump)/` — pump owner (requests, completed, billing, team)
-- `app/(employee)/` — pump employee (pending, completed)
-- `src/components/ui/` — shared UI + [`BillView`](src/components/ui/BillView.tsx)
+- Expo Router — [`app/`](app/)
+- State: [`src/context/AppContext.tsx`](src/context/AppContext.tsx)
+- Types / seed: [`src/types/index.ts`](src/types/index.ts), [`src/mock/seed.ts`](src/mock/seed.ts)

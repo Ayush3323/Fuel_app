@@ -2,7 +2,7 @@ import { StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
-import { Button, Card, Screen } from '@/src/components/ui';
+import { Button, Card, Header, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
 export default function PumpProfile() {
@@ -12,7 +12,7 @@ export default function PumpProfile() {
 
   return (
     <Screen>
-      <Text style={styles.title}>Profile</Text>
+      <Header title="Profile" />
       <Card style={styles.card}>
         <Text style={styles.label}>Pump</Text>
         <Text style={styles.val}>{pump?.name}</Text>
@@ -36,13 +36,7 @@ export default function PumpProfile() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: FuelColors.text,
-    padding: 20,
-  },
-  card: { marginHorizontal: 16, marginBottom: 20 },
+  card: { marginHorizontal: 16, marginTop: 8, marginBottom: 20 },
   label: { fontSize: 12, color: FuelColors.textSecondary, fontWeight: '600' },
   val: { fontSize: 16, color: FuelColors.text, marginTop: 4 },
 });

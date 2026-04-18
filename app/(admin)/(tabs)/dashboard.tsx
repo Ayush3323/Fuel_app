@@ -6,52 +6,64 @@ import { useApp } from '@/src/context/AppContext';
 import { billTotalForItems } from '@/src/utils/billMath';
 
 export default function AdminDashboard() {
-  const { requests, transactions, bills, company, pumps } = useApp();
+  const { requests, transactions, bills, currentUser, getCompany, getPumpsForCompany } =
+    useApp();
+  const companyId = currentUser?.companyId;
+  const company = companyId ? getCompany(companyId) : undefined;
 
   const pendingCount = useMemo(
-    () => requests.filter((r) => r.status === 'pending').length,
-    [requests]
+    () =>
+      requests.filter(
+        (r) => r.companyId === companyId && r.status === 'pending'
+      ).length,
+    [requests, companyId]
   );
 
   const totalOutstanding = useMemo(() => {
+    if (!companyId) return 0;
+    const pumps = getPumpsForCompany(companyId);
     let o = 0;
     for (const p of pumps) {
       for (const b of bills) {
-        if (b.pumpId !== p.id || b.status === 'paid') continue;
+        if (b.pumpId !== p.id || b.companyId !== companyId || b.status === 'paid')
+          continue;
         o += billTotalForItems(b, transactions).totalDue;
       }
       const unbilled = transactions.filter(
-        (t) => t.pumpId === p.id && !t.billId
+        (t) =>
+          t.pumpId === p.id && t.companyId === companyId && !t.billId
       );
       for (const t of unbilled) o += t.gross + t.extraCash + t.advance;
     }
     return Math.round(o * 100) / 100;
-  }, [pumps, bills, transactions]);
+  }, [getPumpsForCompany, bills, transactions, companyId]);
 
   const hsdMs = useMemo(() => {
     let hsd = 0;
     let ms = 0;
     for (const t of transactions) {
+      if (t.companyId !== companyId) continue;
       if (t.fuel === 'HSD') hsd += t.gross;
       else ms += t.gross;
     }
     return { hsd, ms };
-  }, [transactions]);
+  }, [transactions, companyId]);
 
   const recent = useMemo(() => {
     return [...transactions]
+      .filter((t) => t.companyId === companyId)
       .sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
       .slice(0, 6);
-  }, [transactions]);
+  }, [transactions, companyId]);
 
   return (
     <Screen>
       <View style={styles.top}>
         <Text style={styles.title}>Dashboard</Text>
-        <Text style={styles.co}>{company.name}</Text>
+        <Text style={styles.co}>{company?.name ?? '—'}</Text>
       </View>
 
       <View style={styles.stats}>
@@ -62,11 +74,11 @@ export default function AdminDashboard() {
         <StatTile
           label="Pending requests"
           value={String(pendingCount)}
-          sub="Across all pumps"
+          sub="Linked pumps"
         />
       </View>
 
-      <SectionTitle title="Fuel volume (all time)" />
+      <SectionTitle title="Fuel volume (this company)" />
       <View style={styles.stats}>
         <StatTile
           label="Diesel (HSD) gross"

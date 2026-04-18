@@ -1,9 +1,9 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { Ionicons } from '@expo/vector-icons';
 import { FuelColors } from '@/constants/theme';
-import { Card, Screen, SectionTitle } from '@/src/components/ui';
+import { Card, Header, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
 export default function PumpTeam() {
@@ -16,15 +16,17 @@ export default function PumpTeam() {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Text style={styles.title}>Team</Text>
-        <Pressable
-          onPress={() => router.push(href('/(pump)/team/new'))}
-          style={styles.addBtn}
-        >
-          <Ionicons name="add" size={24} color="#fff" />
-        </Pressable>
-      </View>
+      <Header
+        title="Team"
+        right={
+          <Pressable
+            onPress={() => router.push(href('/(pump)/(home)/team/new'))}
+            style={styles.addBtn}
+          >
+            <Ionicons name="add" size={24} color="#fff" />
+          </Pressable>
+        }
+      />
       <SectionTitle title="Pump employees" />
       <ScrollView contentContainerStyle={styles.list}>
         {team.map((u) => (
@@ -42,19 +44,11 @@ export default function PumpTeam() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
-  title: { fontSize: 26, fontWeight: '800', color: FuelColors.text },
   addBtn: {
     backgroundColor: FuelColors.primary,
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },

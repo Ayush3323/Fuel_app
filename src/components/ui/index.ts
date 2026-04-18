@@ -3,6 +3,8 @@ export { Badge } from './Badge';
 export { BillView } from './BillView';
 export { Button } from './Button';
 export { Card } from './Card';
+export { CompanyCard } from './CompanyCard';
+export { CompanyFilterBar } from './CompanyFilterBar';
 export { EmptyState } from './EmptyState';
 export { FuelTypePill } from './FuelTypePill';
 export { Header } from './Header';

@@ -17,16 +17,18 @@ import { billTotalForItems } from '@/src/utils/billMath';
 
 export default function NewBillScreen() {
   const router = useRouter();
+  const { companyId } = useLocalSearchParams<{ companyId: string }>();
   const { preselect } = useLocalSearchParams<{ preselect?: string }>();
 
   useEffect(() => {
     if (preselect)
       setSelected((prev) => new Set([...prev, preselect]));
   }, [preselect]);
+
   const {
     getUnbilledTransactions,
     currentUser,
-    company,
+    getCompany,
     createBillDraft,
     raiseBill,
     transactions,
@@ -34,10 +36,11 @@ export default function NewBillScreen() {
   } = useApp();
   const pumpId = currentUser?.pumpId!;
   const pump = pumps.find((p) => p.id === pumpId);
+  const company = companyId ? getCompany(companyId) : undefined;
 
   const unbilled = useMemo(
-    () => getUnbilledTransactions(pumpId),
-    [getUnbilledTransactions, pumpId]
+    () => getUnbilledTransactions(pumpId, companyId),
+    [getUnbilledTransactions, pumpId, companyId]
   );
 
   const [selected, setSelected] = useState<Set<string>>(() => {
@@ -84,7 +87,7 @@ export default function NewBillScreen() {
     return {
       id: 'preview',
       pumpId,
-      companyId: company.id,
+      companyId,
       billNo: 'PREVIEW',
       period: { from: `${from}T00:00:00.000Z`, to: `${to}T23:59:59.999Z` },
       generatedAt: new Date().toISOString(),
@@ -94,18 +97,19 @@ export default function NewBillScreen() {
       previousBalance: parseFloat(prevBal) || 0,
       status: 'draft' as const,
     };
-  }, [selected, pumpId, company.id, from, to, discountHSD, discountMS, prevBal]);
+  }, [selected, pumpId, companyId, from, to, discountHSD, discountMS, prevBal]);
 
   const parts = billTotalForItems(previewBill, transactions);
 
   const saveDraft = () => {
+    if (!company) return;
     if (selected.size === 0) {
       Alert.alert('Select items', 'Pick at least one transaction');
       return;
     }
     const b = createBillDraft({
       pumpId,
-      companyId: company.id,
+      companyId,
       itemIds: [...selected],
       period: { from: `${from}T00:00:00.000Z`, to: `${to}T23:59:59.999Z` },
       discountHSD,
@@ -113,18 +117,23 @@ export default function NewBillScreen() {
       previousBalance: parseFloat(prevBal) || 0,
     });
     Alert.alert('Draft saved', b.billNo, [
-      { text: 'OK', onPress: () => router.replace(href(`/(pump)/billing/${b.id}`)) },
+      {
+        text: 'OK',
+        onPress: () =>
+          router.replace(href(`/(pump)/${companyId}/billing/${b.id}`)),
+      },
     ]);
   };
 
   const raise = () => {
+    if (!company) return;
     if (selected.size === 0) {
       Alert.alert('Select items', 'Pick at least one transaction');
       return;
     }
     const b = createBillDraft({
       pumpId,
-      companyId: company.id,
+      companyId,
       itemIds: [...selected],
       period: { from: `${from}T00:00:00.000Z`, to: `${to}T23:59:59.999Z` },
       discountHSD,
@@ -133,9 +142,22 @@ export default function NewBillScreen() {
     });
     raiseBill(b.id);
     Alert.alert('Bill raised', 'Company will see it under Bills.', [
-      { text: 'OK', onPress: () => router.replace(href(`/(pump)/billing/${b.id}`)) },
+      {
+        text: 'OK',
+        onPress: () =>
+          router.replace(href(`/(pump)/${companyId}/billing/${b.id}`)),
+      },
     ]);
   };
+
+  if (!company) {
+    return (
+      <Screen>
+        <Header title="Raise bill" />
+        <Text style={{ padding: 16 }}>Company not found</Text>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -168,7 +190,7 @@ export default function NewBillScreen() {
 
         <Text style={styles.section}>HSD discount</Text>
         <Input
-          label="Mode: per_liter or flat (type per_liter or flat)"
+          label="Mode: per_liter or flat"
           value={hsdMode}
           onChangeText={(x) =>
             setHsdMode(x === 'flat' ? 'flat' : 'per_liter')
