@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  View,
 } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
@@ -49,39 +50,73 @@ export default function RegisterPumpScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.body}>
-          <Text style={styles.title}>Register pump</Text>
-          <Text style={styles.sub}>
-            Create your petrol pump account. Join transport companies with invite
-            codes they send you.
-          </Text>
-          <Card>
-            <Input label="Pump / station name" value={pumpName} onChangeText={setPumpName} />
-            <Input label="Address" value={address} onChangeText={setAddress} />
-            <Input label="Contact" value={contact} onChangeText={setContact} />
+        <ScrollView 
+          contentContainerStyle={styles.body}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.headerSection}>
+            <View style={styles.iconContainer}>
+              <Text style={styles.iconEmoji}>⛽</Text>
+            </View>
+            <Text style={styles.title}>Register your pump</Text>
+            <Text style={styles.sub}>
+              Join the Fuel Credit network and connect with transport companies seamlessly.
+            </Text>
+          </View>
+
+          <Card style={styles.formCard}>
+            <Input 
+              label="Pump / station name" 
+              placeholder="e.g. Reliable Fuels"
+              value={pumpName} 
+              onChangeText={setPumpName} 
+            />
+            <Input 
+              label="Address" 
+              placeholder="Full location details"
+              value={address} 
+              onChangeText={setAddress} 
+            />
+            <Input 
+              label="Contact number" 
+              keyboardType="phone-pad"
+              placeholder="+91 XXXXX XXXXX"
+              value={contact} 
+              onChangeText={setContact} 
+            />
             <Input
-              label="Owner display name (optional)"
+              label="Owner name"
+              placeholder="Full name for display"
               value={ownerName}
               onChangeText={setOwnerName}
             />
+            <View style={styles.divider} />
             <Input
               label="Login ID"
               autoCapitalize="none"
+              placeholder="Choose a unique ID"
               value={loginId}
               onChangeText={setLoginId}
             />
             <Input
               label="Password"
               secureTextEntry
+              placeholder="••••••••"
               value={password}
               onChangeText={setPassword}
             />
-            <Button title="Create account" onPress={onSubmit} />
+            <Button 
+              title="Create Pump Account" 
+              onPress={onSubmit} 
+              style={styles.submitBtn}
+            />
           </Card>
+          
           <Button
-            title="Back to sign in"
+            title="Back to login"
             variant="outline"
             onPress={() => router.back()}
+            style={styles.backBtn}
           />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -90,7 +125,46 @@ export default function RegisterPumpScreen() {
 }
 
 const styles = StyleSheet.create({
-  body: { padding: 20, paddingBottom: 40 },
-  title: { fontSize: 24, fontWeight: '800', color: FuelColors.text },
-  sub: { color: FuelColors.textSecondary, marginVertical: 16, lineHeight: 22 },
+  body: { padding: 20, paddingBottom: 60 },
+  headerSection: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 32,
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: FuelColors.primaryMuted,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iconEmoji: { fontSize: 32 },
+  title: { 
+    fontSize: 28, 
+    fontWeight: '900', 
+    color: FuelColors.text,
+    textAlign: 'center',
+  },
+  sub: { 
+    color: FuelColors.textSecondary, 
+    marginTop: 10, 
+    lineHeight: 20,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    fontSize: 15,
+  },
+  formCard: {
+    padding: 24,
+    marginBottom: 20,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: FuelColors.border,
+    marginVertical: 16,
+    opacity: 0.5,
+  },
+  submitBtn: { marginTop: 12 },
+  backBtn: { marginTop: 10 },
 });

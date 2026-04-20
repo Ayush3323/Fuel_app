@@ -64,6 +64,7 @@ export const SEED_USERS: User[] = [
     loginId: 'admin',
     password: 'admin123',
     companyId: 'co1',
+    createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
   },
   {
     id: 'u-admin-co2',
@@ -72,6 +73,7 @@ export const SEED_USERS: User[] = [
     loginId: 'shree',
     password: 'shree123',
     companyId: 'co2',
+    createdAt: new Date(Date.now() - 86400000 * 25).toISOString(),
   },
   {
     id: 'u-pump1',
@@ -80,6 +82,7 @@ export const SEED_USERS: User[] = [
     loginId: 'pump1',
     password: 'pump123',
     pumpId: 'p1',
+    createdAt: new Date(Date.now() - 86400000 * 40).toISOString(),
   },
   {
     id: 'u-pump2',
@@ -88,6 +91,7 @@ export const SEED_USERS: User[] = [
     loginId: 'pump2',
     password: 'pump123',
     pumpId: 'p2',
+    createdAt: new Date(Date.now() - 86400000 * 45).toISOString(),
   },
   {
     id: 'u-emp1',
@@ -96,6 +100,7 @@ export const SEED_USERS: User[] = [
     loginId: 'emp1',
     password: 'emp123',
     pumpId: 'p1',
+    createdAt: new Date(Date.now() - 86400000 * 15).toISOString(),
   },
 ];
 

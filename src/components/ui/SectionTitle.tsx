@@ -1,9 +1,17 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { FuelColors } from '@/constants/theme';
 
-export function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
+export function SectionTitle({ 
+  title, 
+  action, 
+  style 
+}: { 
+  title: string; 
+  action?: React.ReactNode;
+  style?: any;
+}) {
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, style]}>
       <Text style={styles.title}>{title}</Text>
       {action}
     </View>

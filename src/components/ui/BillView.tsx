@@ -29,7 +29,7 @@ export function BillView({ bill, pump, company, transactions }: Props) {
   const parts = billTotalForItems(bill, transactions);
 
   return (
-    <View style={styles.scroll} collapsable={false}>
+    <View style={[styles.scroll, styles.content]} collapsable={false}>
       <View style={styles.header}>
         <Text style={styles.pumpName}>{pump.name}</Text>
         <Text style={styles.meta}>{pump.address}</Text>

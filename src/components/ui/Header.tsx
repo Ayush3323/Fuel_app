@@ -15,7 +15,7 @@ export function Header({ title, subtitle, showBack = true, right }: Props) {
   const router = useRouter();
   return (
     <View style={styles.row}>
-      {showBack ? (
+      {showBack && (
         <Pressable
           onPress={() => router.back()}
           hitSlop={12}
@@ -23,8 +23,6 @@ export function Header({ title, subtitle, showBack = true, right }: Props) {
         >
           <Ionicons name="chevron-back" size={24} color={FuelColors.text} />
         </Pressable>
-      ) : (
-        <View style={styles.back} />
       )}
       <View style={styles.titleBlock}>
         <Text style={styles.title} numberOfLines={1}>
@@ -45,23 +43,26 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: FuelColors.border,
     backgroundColor: FuelColors.surface,
   },
   back: { width: 40, justifyContent: 'center' },
-  titleBlock: { flex: 1, alignItems: 'center' },
+  titleBlock: { flex: 1, alignItems: 'flex-start' },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '900',
     color: FuelColors.text,
+    letterSpacing: -0.5,
+    marginBottom: 2,
   },
   sub: {
-    fontSize: 12,
+    fontSize: 14,
     color: FuelColors.textSecondary,
     marginTop: 2,
+    fontWeight: '500',
   },
   right: { minWidth: 40, alignItems: 'flex-end' },
 });

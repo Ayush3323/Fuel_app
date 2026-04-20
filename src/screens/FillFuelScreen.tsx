@@ -29,9 +29,14 @@ export function FillFuelScreen() {
     !!req &&
     req.companyId !== routeCompanyId;
 
-  const [qty, setQty] = useState('');
+  const isFullTank = req?.qty === 0;
+  const [qty, setQty] = useState(isFullTank ? '' : String(req?.qty ?? ''));
   const [rate, setRate] = useState('');
-  const [voucher, setVoucher] = useState('');
+  const [voucher, setVoucher] = useState(() => {
+    const vNo = req?.vehicleNo.replace(/\s/g, '').slice(-4) || '0000';
+    const rand = Math.floor(10000 + Math.random() * 90000);
+    return `${rand}/${vNo}`;
+  });
   const [extraCash, setExtraCash] = useState('');
   const [advance, setAdvance] = useState('');
   const [vehiclePhoto, setVehiclePhoto] = useState<string>();
@@ -84,13 +89,13 @@ export function FillFuelScreen() {
   }
 
   return (
-    <Screen>
+    <Screen key={req.id}>
       <Header title="Fill fuel" subtitle={pump?.name} />
       <ScrollView contentContainerStyle={styles.body}>
         <Card style={styles.req}>
           <Text style={styles.v}>{req.vehicleNo}</Text>
           <FuelTypePill fuel={req.fuel} />
-          <Text style={styles.meta}>Asked: {req.qty} L</Text>
+          <Text style={styles.meta}>Asked: {isFullTank ? 'Full Tank' : `${req.qty} L`}</Text>
         </Card>
 
         <Input
@@ -98,6 +103,8 @@ export function FillFuelScreen() {
           keyboardType="decimal-pad"
           value={qty}
           onChangeText={setQty}
+          editable={isFullTank}
+          style={!isFullTank && { backgroundColor: FuelColors.background }}
         />
         <Input
           label="Rate (₹/L)"

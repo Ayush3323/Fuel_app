@@ -111,7 +111,7 @@ type AppContextValue = {
     filledByUserId: string;
   }) => Transaction | null;
   getUnbilledTransactions: (pumpId: string, companyId: string) => Transaction[];
-  createBillDraft: (input: {
+  createBill: (input: {
     pumpId: string;
     companyId: string;
     itemIds: string[];
@@ -119,8 +119,10 @@ type AppContextValue = {
     discountHSD: FuelDiscount;
     discountMS: FuelDiscount;
     previousBalance: number;
+    status?: BillStatus;
   }) => Bill;
   updateBill: (id: string, patch: Partial<Bill>) => void;
+  deleteBill: (id: string) => void;
   raiseBill: (id: string) => void;
   markBillPaid: (
     id: string,
@@ -229,6 +231,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loginId: input.loginId.trim().toLowerCase(),
       password: input.password,
       companyId,
+      createdAt: new Date().toISOString(),
     };
     setCompanies((prev) => [...prev, company]);
     setUsers((prev) => [...prev, admin]);
@@ -253,6 +256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loginId: input.loginId.trim().toLowerCase(),
       password: input.password,
       pumpId,
+      createdAt: new Date().toISOString(),
     };
     setPumps((prev) => [...prev, pump]);
     setUsers((prev) => [...prev, owner]);
@@ -330,6 +334,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loginId,
       password,
       pumpId,
+      createdAt: new Date().toISOString(),
     };
     setUsers((prev) => [...prev, user]);
     return { user, loginId, password };
@@ -420,7 +425,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [transactions]
   );
 
-  const createBillDraft = useCallback(
+  const createBill = useCallback(
     (input: {
       pumpId: string;
       companyId: string;
@@ -429,6 +434,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       discountHSD: FuelDiscount;
       discountMS: FuelDiscount;
       previousBalance: number;
+      status?: BillStatus;
     }) => {
       const billNo = `BILL-${Date.now().toString(36).toUpperCase()}`;
       const b: Bill = {
@@ -442,7 +448,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         discountHSD: input.discountHSD,
         discountMS: input.discountMS,
         previousBalance: input.previousBalance,
-        status: 'draft' as BillStatus,
+        status: input.status ?? ('draft' as BillStatus),
       };
       setBills((prev) => [...prev, b]);
       setTransactions((prev) =>
@@ -462,6 +468,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const raiseBill = useCallback((id: string) => {
     setBills((prev) =>
       prev.map((b) => (b.id === id ? { ...b, status: 'raised' as BillStatus } : b))
+    );
+  }, []);
+
+  const deleteBill = useCallback((id: string) => {
+    setBills((prev) => prev.filter((b) => b.id !== id));
+    setTransactions((prev) =>
+      prev.map((t) => (t.billId === id ? { ...t, billId: undefined } : t))
     );
   }, []);
 
@@ -526,8 +539,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       createFuelRequest,
       fillFuelRequest,
       getUnbilledTransactions,
-      createBillDraft,
+      createBill,
       updateBill,
+      deleteBill,
       raiseBill,
       markBillPaid,
       assignTransactionsToBill,
@@ -557,8 +571,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       createFuelRequest,
       fillFuelRequest,
       getUnbilledTransactions,
-      createBillDraft,
+      createBill,
       updateBill,
+      deleteBill,
       raiseBill,
       markBillPaid,
       assignTransactionsToBill,

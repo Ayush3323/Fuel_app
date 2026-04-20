@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
 import {
@@ -9,6 +10,8 @@ import {
   Header,
   Input,
   Screen,
+  SectionTitle,
+  Select,
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import type { FuelDiscount } from '@/src/types';
@@ -132,103 +135,161 @@ export default function PumpBillDetail() {
   const addable = unbilled.filter((t) => !selected.has(t.id));
 
   return (
-    <Screen>
-      <Header title={bill.billNo} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <View style={styles.banner}>
-          <Text style={styles.dueLabel}>Total due</Text>
-          <Text style={styles.due}>₹ {due.toLocaleString('en-IN')}</Text>
-          <Text style={styles.st}>Status: {bill.status}</Text>
+    <Screen style={styles.screen}>
+      <Header title={bill.billNo} subtitle={company?.name} />
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <View style={styles.topDashboard}>
+          <View style={styles.mainAmtBox}>
+            <Text style={styles.previewTitle}>Total Due</Text>
+            <Text style={styles.previewAmt}>
+              ₹ {due.toLocaleString('en-IN')}
+            </Text>
+          </View>
+          <View style={[styles.statsIconBox, { backgroundColor: bill.status === 'paid' ? FuelColors.successMuted : FuelColors.primaryMuted }]}>
+            <Ionicons 
+              name={bill.status === 'paid' ? "checkmark-circle" : "receipt"} 
+              size={32} 
+              color={bill.status === 'paid' ? FuelColors.success : FuelColors.primary} 
+            />
+          </View>
         </View>
 
         {editable ? (
           <>
-            <Text style={styles.section}>Line items on this bill</Text>
-            {inBillTx.map((t) => (
-              <Pressable key={t.id} onPress={() => removeLine(t.id)}>
-                <Card style={styles.trow}>
-                  <Text style={styles.ttxt}>
-                    Tap to remove · {t.vehicleNo} · {t.fuel} · ₹
-                    {t.gross.toLocaleString('en-IN')}
-                  </Text>
-                </Card>
-              </Pressable>
-            ))}
-            {inBillTx.length === 0 ? (
-              <Text style={styles.hint}>No transactions selected</Text>
-            ) : null}
+            <SectionTitle title="Line Items" style={styles.section} />
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              style={styles.tScroll}
+              contentContainerStyle={styles.tScrollContent}
+            >
+              {inBillTx.map((t) => (
+                <Pressable key={t.id} onPress={() => removeLine(t.id)}>
+                  <Card style={[styles.tCard, styles.tCardOn]}>
+                    <View style={styles.tCardHeader}>
+                      <Ionicons name="remove-circle" size={22} color={FuelColors.danger} />
+                      <Text style={styles.tCardNo}>{t.vehicleNo}</Text>
+                    </View>
+                    <Text style={styles.tCardAmt}>₹{t.gross.toLocaleString('en-IN')}</Text>
+                    <Text style={styles.tCardMeta}>{t.fuel} · {t.actualQty}L</Text>
+                  </Card>
+                </Pressable>
+              ))}
+              {inBillTx.length === 0 ? (
+                <Text style={styles.empty}>No transactions selected</Text>
+              ) : null}
+            </ScrollView>
 
-            <Text style={styles.section}>Add unbilled transactions</Text>
-            {addable.map((t) => (
-              <Pressable key={t.id} onPress={() => addUnbilled(t.id)}>
-                <Card style={styles.trow}>
-                  <Text style={styles.ttxt}>
-                    Tap to add · {t.vehicleNo} · {t.fuel} · ₹
-                    {t.gross.toLocaleString('en-IN')}
-                  </Text>
-                </Card>
-              </Pressable>
-            ))}
-            {addable.length === 0 ? (
-              <Text style={styles.hint}>No other unbilled fills for this company</Text>
-            ) : null}
+            {addable.length > 0 && (
+              <>
+                <SectionTitle title="Available Transactions" style={styles.section} />
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  style={styles.tScroll}
+                  contentContainerStyle={styles.tScrollContent}
+                >
+                  {addable.map((t) => (
+                    <Pressable key={t.id} onPress={() => addUnbilled(t.id)}>
+                      <Card style={styles.tCard}>
+                        <View style={styles.tCardHeader}>
+                          <Ionicons name="add-circle" size={22} color={FuelColors.success} />
+                          <Text style={styles.tCardNo}>{t.vehicleNo}</Text>
+                        </View>
+                        <Text style={styles.tCardAmt}>₹{t.gross.toLocaleString('en-IN')}</Text>
+                        <Text style={styles.tCardMeta}>{t.fuel} · {t.actualQty}L</Text>
+                      </Card>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </>
+            )}
 
-            <View style={styles.form}>
-              <Input label="Period from" value={from} onChangeText={setFrom} />
-              <Input label="Period to" value={to} onChangeText={setTo} />
+            <SectionTitle title="Configuration" style={styles.section} />
+            <Card style={styles.configCard}>
+              <View style={styles.configGrid}>
+                <View style={{ flex: 1 }}>
+                  <Input label="From" value={from} onChangeText={setFrom} />
+                </View>
+                <View style={{ width: 12 }} />
+                <View style={{ flex: 1 }}>
+                  <Input label="To" value={to} onChangeText={setTo} />
+                </View>
+              </View>
+              
               <Input
-                label="Previous balance (₹)"
+                label="Previous Balance (₹)"
                 keyboardType="decimal-pad"
                 value={prevBal}
                 onChangeText={setPrevBal}
+                leftIcon={<Text style={{ fontSize: 16, color: FuelColors.textMuted, fontWeight: '700' }}>₹ </Text>}
               />
+            </Card>
 
-              <Text style={styles.section}>HSD discount</Text>
-              <Input
-                label="Mode: per_liter or flat"
-                value={hsdMode}
-                onChangeText={(x) =>
-                  setHsdMode(x === 'flat' ? 'flat' : 'per_liter')
-                }
-              />
-              <Input
-                label="Value"
-                value={hsdVal}
-                onChangeText={setHsdVal}
-                keyboardType="decimal-pad"
-              />
+            <SectionTitle title="Discounts" style={styles.section} />
+            <View style={styles.discountRow}>
+              <Card style={styles.discountCard}>
+                <Text style={styles.discountLabel}>HSD DISCOUNT</Text>
+                <Select 
+                  label="Mode"
+                  value={hsdMode}
+                  options={[{ label: 'Flat Amount', value: 'flat' }, { label: 'Per Liter (₹/L)', value: 'per_liter' }]}
+                  onSelect={setHsdMode}
+                  style={{ marginBottom: 12 }}
+                />
+                <Input 
+                  label="Value"
+                  value={hsdVal} 
+                  onChangeText={setHsdVal} 
+                  keyboardType="decimal-pad" 
+                  leftIcon={<Text style={{ fontWeight: '700', color: FuelColors.textMuted }}>{hsdMode === 'flat' ? '₹' : '₹/L'}</Text>}
+                  style={{ marginBottom: 0 }}
+                />
+              </Card>
+              <Card style={styles.discountCard}>
+                <Text style={styles.discountLabel}>MS DISCOUNT</Text>
+                <Select 
+                  label="Mode"
+                  value={msMode}
+                  options={[{ label: 'Flat Amount', value: 'flat' }, { label: 'Per Liter (₹/L)', value: 'per_liter' }]}
+                  onSelect={setMsMode}
+                  style={{ marginBottom: 12 }}
+                />
+                <Input 
+                  label="Value"
+                  value={msVal} 
+                  onChangeText={setMsVal} 
+                  keyboardType="decimal-pad" 
+                  leftIcon={<Text style={{ fontWeight: '700', color: FuelColors.textMuted }}>{msMode === 'flat' ? '₹' : '₹/L'}</Text>}
+                  style={{ marginBottom: 0 }}
+                />
+              </Card>
+            </View>
 
-              <Text style={styles.section}>MS discount</Text>
-              <Input
-                label="Mode"
-                value={msMode}
-                onChangeText={(x) =>
-                  setMsMode(x === 'flat' ? 'flat' : 'per_liter')
-                }
-              />
-              <Input
-                label="Value"
-                value={msVal}
-                onChangeText={setMsVal}
-                keyboardType="decimal-pad"
-              />
+            <SectionTitle title="Live Preview" style={styles.section} />
+            <View style={styles.previewContainer}>
+              <Card style={styles.billPreviewCard}>
+                {previewBill && (
+                  <BillView
+                    bill={previewBill}
+                    pump={pump}
+                    company={company}
+                    transactions={transactions}
+                  />
+                )}
+              </Card>
             </View>
 
             <View style={styles.actions}>
-              <Button title="Save changes" onPress={saveChanges} />
+              <Button title={`Save Changes • ₹${due.toLocaleString('en-IN')}`} onPress={saveChanges} style={styles.actionBtn} />
             </View>
-
-            {previewBill ? (
-              <BillView
-                bill={previewBill}
-                pump={pump}
-                company={company}
-                transactions={transactions}
-              />
-            ) : null}
           </>
         ) : (
-          <BillView bill={bill} pump={pump} company={company} transactions={transactions} />
+          <View style={{ paddingHorizontal: 12, paddingTop: 12 }}>
+            <Card style={styles.billPreviewCard}>
+              <BillView bill={bill} pump={pump} company={company} transactions={transactions} />
+            </Card>
+          </View>
         )}
       </ScrollView>
     </Screen>
@@ -236,31 +297,45 @@ export default function PumpBillDetail() {
 }
 
 const styles = StyleSheet.create({
-  miss: { padding: 20 },
-  banner: {
-    margin: 16,
-    padding: 16,
+  screen: { backgroundColor: FuelColors.background },
+  body: { paddingBottom: 60 },
+  topDashboard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: FuelColors.background,
+  },
+  mainAmtBox: { flex: 1 },
+  previewTitle: { fontSize: 13, color: FuelColors.textSecondary, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  previewAmt: { fontSize: 36, fontWeight: '900', color: FuelColors.primary, marginTop: 4 },
+  statsIconBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
     backgroundColor: FuelColors.primaryMuted,
-    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  dueLabel: { fontSize: 12, color: FuelColors.textSecondary },
-  due: { fontSize: 24, fontWeight: '800', color: FuelColors.primary },
-  st: { marginTop: 8, color: FuelColors.textSecondary },
-  section: {
-    fontWeight: '800',
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    color: FuelColors.text,
-  },
-  form: { paddingHorizontal: 16 },
-  trow: { marginHorizontal: 16, marginBottom: 8, padding: 12 },
-  ttxt: { fontSize: 14, color: FuelColors.text },
-  hint: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    color: FuelColors.textMuted,
-    fontSize: 13,
-  },
-  actions: { paddingHorizontal: 16, marginTop: 16, marginBottom: 8 },
+  section: { paddingHorizontal: 20, marginTop: 16, marginBottom: 4 },
+  tScroll: { marginVertical: 8 },
+  tScrollContent: { paddingHorizontal: 20, gap: 12 },
+  tCard: { width: 170, padding: 16, borderRadius: 24, backgroundColor: '#fff', borderWidth: 1, borderColor: FuelColors.border },
+  tCardOn: { borderColor: FuelColors.danger + '40', backgroundColor: FuelColors.danger + '05' },
+  tCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  tCardNo: { fontSize: 14, fontWeight: '800', color: FuelColors.text },
+  tCardAmt: { fontSize: 18, fontWeight: '900', color: FuelColors.text },
+  tCardMeta: { fontSize: 12, color: FuelColors.textSecondary, marginTop: 4, fontWeight: '600' },
+  configCard: { marginHorizontal: 20, padding: 20, borderRadius: 24 },
+  configGrid: { flexDirection: 'row', marginBottom: 4 },
+  discountRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 20 },
+  discountCard: { flex: 1, padding: 20, borderRadius: 24 },
+  discountLabel: { fontSize: 12, fontWeight: '900', color: FuelColors.primary, marginBottom: 16, letterSpacing: 0.5 },
+  previewContainer: { paddingHorizontal: 12 },
+  billPreviewCard: { marginHorizontal: 8, padding: 0, borderRadius: 28, marginTop: 8, borderColor: 'transparent', elevation: 4 },
+  actions: { padding: 20, marginTop: 16 },
+  actionBtn: { height: 64, borderRadius: 20, shadowColor: FuelColors.primary, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  empty: { color: FuelColors.textMuted, paddingHorizontal: 20, marginVertical: 32, fontStyle: 'italic', textAlign: 'center' },
+  miss: { padding: 20, textAlign: 'center', color: FuelColors.textSecondary },
 });

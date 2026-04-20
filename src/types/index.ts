@@ -17,6 +17,7 @@ export interface User {
   pumpId?: string;
   /** Set only for company admin users */
   companyId?: string;
+  createdAt: string;
 }
 
 export interface Company {

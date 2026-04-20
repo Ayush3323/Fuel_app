@@ -1,7 +1,7 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
-import { CompanyCard, EmptyState, Screen } from '@/src/components/ui';
+import { Card, CompanyCard, EmptyState, Header, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp, useOutstandingForLink } from '@/src/context/AppContext';
 import { href } from '@/src/utils/routerHref';
 
@@ -48,31 +48,36 @@ function CompanyRow({
 
 export default function PumpCompaniesHome() {
   const router = useRouter();
-  const { currentUser, pumps, getCompaniesForPump } = useApp();
+  const { currentUser, pumps, getCompaniesForPump, requests } = useApp();
   const pumpId = currentUser?.pumpId ?? '';
   const pump = pumps.find((p) => p.id === pumpId);
   const companies = getCompaniesForPump(pumpId);
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Companies</Text>
-          <Text style={styles.sub}>{pump?.name ?? 'Pump'}</Text>
-        </View>
-        <Pressable
-          onPress={() => router.push(href('/(pump)/(home)/join'))}
-          style={styles.joinBtn}
-        >
-          <Text style={styles.joinTxt}>Join</Text>
-        </Pressable>
-      </View>
+      <Header 
+        title="Dashboard" 
+        subtitle={pump?.name ?? ''} 
+        showBack={false}
+        right={
+          <Pressable
+            onPress={() => router.push(href('/(pump)/(home)/join'))}
+            style={styles.joinBtn}
+          >
+            <Text style={styles.joinTxt}>+ Link</Text>
+          </Pressable>
+        }
+      />
+
+      <SectionTitle title="Connected Companies" style={styles.section} />
 
       {companies.length === 0 ? (
-        <EmptyState
-          title="No companies yet"
-          subtitle="Tap Join and enter an invite code from a transport company."
-        />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            title="No companies yet"
+            subtitle="Tap Link Company and enter an invite code from a transport company."
+          />
+        </View>
       ) : (
         <FlatList
           data={companies}
@@ -81,6 +86,7 @@ export default function PumpCompaniesHome() {
           renderItem={({ item }) => (
             <CompanyRow companyId={item.id} pumpId={pumpId} />
           )}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </Screen>
@@ -93,16 +99,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 12,
+    paddingBottom: 24,
   },
-  title: { fontSize: 26, fontWeight: '800', color: FuelColors.text },
-  sub: { color: FuelColors.textSecondary, marginTop: 4 },
+  screen: { backgroundColor: FuelColors.background },
+  section: { paddingHorizontal: 20, marginTop: 8 },
   joinBtn: {
     backgroundColor: FuelColors.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 12,
   },
-  joinTxt: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  joinTxt: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  list: { paddingHorizontal: 20, paddingBottom: 24, paddingTop: 16 },
 });

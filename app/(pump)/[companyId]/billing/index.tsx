@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useGlobalSearchParams, useLocalSearchParams, useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
+import { Ionicons } from '@expo/vector-icons';
 import { FuelColors } from '@/constants/theme';
-import { Badge, Button, Card, Screen, SectionTitle } from '@/src/components/ui';
+import { Badge, Button, Card, Header, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import { billTotalForItems } from '@/src/utils/billMath';
 
@@ -92,21 +93,21 @@ export default function PumpCompanyBillingIndex() {
   };
 
   return (
-    <Screen>
-      <View style={styles.head}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Billing</Text>
-          <Text style={styles.sub}>
-            {company?.name ?? ''} · {pump?.name}
-          </Text>
-        </View>
-        <Button
-          title="Raise"
-          onPress={() =>
-            router.push(href(`/(pump)/${companyId}/billing/new`))
-          }
-        />
-      </View>
+    <Screen style={styles.screen}>
+      <Header 
+        title="Billing" 
+        subtitle={`${company?.name ?? ''} · ${pump?.name ?? ''}`}
+        right={
+          <Button
+            title="Raise"
+            onPress={() => {
+              const ids = Array.from(selected).join(',');
+              router.push(href(`/(pump)/${companyId}/billing/new?itemIds=${ids}`));
+            }}
+            style={styles.headerBtn}
+          />
+        }
+      />
 
       <View style={styles.tabs}>
         {(
@@ -125,10 +126,11 @@ export default function PumpCompanyBillingIndex() {
           </Pressable>
         ))}
       </View>
+
       {tab === 'unbilled' ? (
         <>
-          <SectionTitle title="Select fills to bill" />
-          <ScrollView contentContainerStyle={styles.list}>
+          <SectionTitle title="Select fills to bill" style={styles.section} />
+          <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
             {selectableFills.map((t) => (
               <Pressable key={t.id} onPress={() => toggle(t.id)}>
                 <Card style={[styles.card, selected.has(t.id) && styles.cardOn]}>
@@ -140,14 +142,18 @@ export default function PumpCompanyBillingIndex() {
                         {t.gross.toLocaleString('en-IN')}
                       </Text>
                     </View>
-                    <Text style={styles.check}>{selected.has(t.id) ? '☑' : '☐'}</Text>
+                    <Ionicons 
+                      name={selected.has(t.id) ? "checkbox" : "square-outline"} 
+                      size={24} 
+                      color={selected.has(t.id) ? FuelColors.primary : FuelColors.textMuted} 
+                    />
                   </View>
                 </Card>
               </Pressable>
             ))}
             {billedFills.length > 0 ? (
               <>
-                <SectionTitle title="Already on a bill" />
+                <SectionTitle title="Already on a bill" style={styles.section} />
                 {billedFills.map((t) => {
                   const b = bills.find((x) => x.id === t.billId);
                   return (
@@ -166,26 +172,28 @@ export default function PumpCompanyBillingIndex() {
             ) : null}
             {companyFills.length === 0 ? (
               <Text style={styles.empty}>
-                No completed fills for this company yet. Complete a request first.
+                No completed fills for this company yet.
               </Text>
             ) : selectableFills.length === 0 ? (
               <Text style={styles.empty}>
-                Every fill here is already on a bill. Open a raised bill to change line
-                items, or add new fills from Completed.
+                Every fill here is already on a bill.
               </Text>
-            ) : (
-              <Button
-                title={`Continue (${selected.size})`}
-                onPress={submitDraftSelection}
-                disabled={selected.size === 0}
-              />
-            )}
+            ) : null}
           </ScrollView>
+          {selected.size > 0 && (
+            <View style={styles.bottomBar}>
+              <Button
+                title={`Continue with ${selected.size} items`}
+                onPress={submitDraftSelection}
+                style={styles.continueBtn}
+              />
+            </View>
+          )}
         </>
       ) : (
         <>
-          <SectionTitle title="Bills" />
-          <ScrollView contentContainerStyle={styles.list}>
+          <SectionTitle title="Bills" style={styles.section} />
+          <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
             {billList.map((b) => {
               const due = billTotalForItems(b, transactions).totalDue;
               return (
@@ -218,42 +226,47 @@ export default function PumpCompanyBillingIndex() {
 }
 
 const styles = StyleSheet.create({
-  head: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 12,
-  },
-  title: { fontSize: 22, fontWeight: '800', color: FuelColors.text },
-  sub: { color: FuelColors.textSecondary, marginTop: 4 },
+  screen: { backgroundColor: FuelColors.background },
+  headerBtn: { height: 36, paddingHorizontal: 20, borderRadius: 10 },
   tabs: {
     flexDirection: 'row',
-    marginHorizontal: 16,
-    marginTop: 12,
-    backgroundColor: FuelColors.chipBg,
-    borderRadius: 12,
+    marginHorizontal: 20,
+    marginTop: 16,
+    backgroundColor: '#fff',
+    borderRadius: 14,
     padding: 4,
+    borderWidth: 1,
+    borderColor: FuelColors.border,
   },
-  tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
-  tabOn: { backgroundColor: FuelColors.surface },
-  tabTxt: { fontSize: 12, fontWeight: '600', color: FuelColors.textSecondary },
-  tabTxtOn: { color: FuelColors.text },
-  list: { padding: 16, paddingBottom: 40 },
-  card: { marginBottom: 12 },
-  cardOn: { borderWidth: 2, borderColor: FuelColors.primary },
-  cardMuted: { opacity: 0.72, backgroundColor: FuelColors.chipBg },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  tabOn: { backgroundColor: FuelColors.primary, shadowColor: FuelColors.primary, shadowOpacity: 0.2, shadowRadius: 8, elevation: 3 },
+  tabTxt: { fontSize: 13, fontWeight: '700', color: FuelColors.textSecondary },
+  tabTxtOn: { color: '#fff' },
+  section: { paddingHorizontal: 20, marginTop: 16 },
+  list: { padding: 20, paddingBottom: 100 },
+  card: { marginBottom: 12, borderRadius: 20, borderWidth: 1, borderColor: FuelColors.border },
+  cardOn: { borderColor: FuelColors.primary, borderWidth: 2 },
+  cardMuted: { opacity: 0.6, backgroundColor: FuelColors.background, borderStyle: 'dashed' },
   onBill: {
     marginTop: 8,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: FuelColors.textMuted,
   },
   row: { flexDirection: 'row', alignItems: 'center' },
-  billNo: { fontWeight: '800', color: FuelColors.text },
-  meta: { marginTop: 6, color: FuelColors.textSecondary, fontSize: 13 },
-  amt: { marginTop: 6, fontSize: 16, fontWeight: '700', color: FuelColors.primary },
-  check: { fontSize: 22, color: FuelColors.primary, marginLeft: 8 },
-  empty: { textAlign: 'center', color: FuelColors.textMuted, padding: 24 },
+  billNo: { fontSize: 15, fontWeight: '800', color: FuelColors.text },
+  meta: { marginTop: 4, color: FuelColors.textSecondary, fontSize: 13, fontWeight: '600' },
+  amt: { marginTop: 6, fontSize: 18, fontWeight: '900', color: FuelColors.primary },
+  empty: { textAlign: 'center', color: FuelColors.textMuted, padding: 40, fontStyle: 'italic' },
+  bottomBar: { 
+    position: 'absolute', 
+    bottom: 0, 
+    left: 0, 
+    right: 0, 
+    padding: 20, 
+    backgroundColor: 'rgba(255,255,255,0.9)', 
+    borderTopWidth: 1, 
+    borderTopColor: FuelColors.border 
+  },
+  continueBtn: { height: 56, borderRadius: 16, shadowColor: FuelColors.primary, shadowOpacity: 0.2 },
 });

@@ -23,11 +23,19 @@ const colors: Record<Status, { bg: string; fg: string }> = {
   paid: { bg: '#D1FAE5', fg: FuelColors.success },
 };
 
-export function Badge({ status }: { status: Status }) {
+export function Badge({ 
+  status, 
+  label, 
+  style 
+}: { 
+  status: Status; 
+  label?: string;
+  style?: any;
+}) {
   const c = colors[status];
   return (
-    <View style={[styles.wrap, { backgroundColor: c.bg }]}>
-      <Text style={[styles.txt, { color: c.fg }]}>{labels[status]}</Text>
+    <View style={[styles.wrap, { backgroundColor: c.bg }, style]}>
+      <Text style={[styles.txt, { color: c.fg }]}>{label ?? labels[status]}</Text>
     </View>
   );
 }

@@ -47,14 +47,18 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: FuelColors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   disabled: { opacity: 0.5 },
-  label: { fontSize: 16, fontWeight: '600' },
+  label: { fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
 });
 
 const stylesForVariant: Record<
