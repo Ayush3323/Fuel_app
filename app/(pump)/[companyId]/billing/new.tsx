@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FuelColors } from '@/constants/theme';
 import {
@@ -17,13 +17,10 @@ import { billTotalForItems } from '@/src/utils/billMath';
 
 export default function NewBillScreen() {
   const router = useRouter();
-  const { companyId } = useLocalSearchParams<{ companyId: string }>();
-  const { preselect } = useLocalSearchParams<{ preselect?: string }>();
-
-  useEffect(() => {
-    if (preselect)
-      setSelected((prev) => new Set([...prev, preselect]));
-  }, [preselect]);
+  const { companyId, itemIds } = useLocalSearchParams<{
+    companyId: string;
+    itemIds?: string;
+  }>();
 
   const {
     getUnbilledTransactions,
@@ -45,7 +42,13 @@ export default function NewBillScreen() {
 
   const [selected, setSelected] = useState<Set<string>>(() => {
     const s = new Set<string>();
-    if (preselect) s.add(preselect);
+    if (itemIds) {
+      const parsed = decodeURIComponent(itemIds)
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean);
+      for (const id of parsed) s.add(id);
+    }
     return s;
   });
   const [from, setFrom] = useState(
@@ -101,30 +104,6 @@ export default function NewBillScreen() {
 
   const parts = billTotalForItems(previewBill, transactions);
 
-  const saveDraft = () => {
-    if (!company) return;
-    if (selected.size === 0) {
-      Alert.alert('Select items', 'Pick at least one transaction');
-      return;
-    }
-    const b = createBillDraft({
-      pumpId,
-      companyId,
-      itemIds: [...selected],
-      period: { from: `${from}T00:00:00.000Z`, to: `${to}T23:59:59.999Z` },
-      discountHSD,
-      discountMS,
-      previousBalance: parseFloat(prevBal) || 0,
-    });
-    Alert.alert('Draft saved', b.billNo, [
-      {
-        text: 'OK',
-        onPress: () =>
-          router.replace(href(`/(pump)/${companyId}/billing/${b.id}`)),
-      },
-    ]);
-  };
-
   const raise = () => {
     if (!company) return;
     if (selected.size === 0) {
@@ -144,8 +123,7 @@ export default function NewBillScreen() {
     Alert.alert('Bill raised', 'Company will see it under Bills.', [
       {
         text: 'OK',
-        onPress: () =>
-          router.replace(href(`/(pump)/${companyId}/billing/${b.id}`)),
+        onPress: () => router.replace(href(`/(pump)/${companyId}/billing?tab=raised`)),
       },
     ]);
   };
@@ -225,7 +203,6 @@ export default function NewBillScreen() {
         ) : null}
 
         <View style={styles.actions}>
-          <Button title="Save draft" variant="secondary" onPress={saveDraft} />
           <Button title="Raise bill" onPress={raise} />
         </View>
       </ScrollView>

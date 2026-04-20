@@ -11,12 +11,13 @@ export default function PumpCompanyBillingIndex() {
   const router = useRouter();
   const { companyId } = useLocalSearchParams<{ companyId: string }>();
   const { bills, transactions, currentUser, pumps, getCompany } = useApp();
-  const pumpId = currentUser?.pumpId;
+  const pumpId = currentUser?.pumpId ?? '';
   const pump = pumps.find((p) => p.id === pumpId);
   const company = companyId ? getCompany(companyId) : undefined;
   const [tab, setTab] = useState<'draft' | 'raised' | 'paid'>('draft');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const list = useMemo(() => {
+  const billList = useMemo(() => {
     return bills
       .filter(
         (b) =>
@@ -29,6 +30,34 @@ export default function PumpCompanyBillingIndex() {
           new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()
       );
   }, [bills, pumpId, companyId, tab]);
+
+  const draftItems = useMemo(
+    () =>
+      transactions
+        .filter(
+          (t) => t.pumpId === pumpId && t.companyId === companyId && !t.billId
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ),
+    [transactions, pumpId, companyId]
+  );
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const submitDraftSelection = () => {
+    if (!companyId || selected.size === 0) return;
+    const ids = encodeURIComponent([...selected].join(','));
+    router.push(href(`/(pump)/${companyId}/billing/new?itemIds=${ids}`));
+  };
 
   return (
     <Screen>
@@ -60,34 +89,68 @@ export default function PumpCompanyBillingIndex() {
           </Pressable>
         ))}
       </View>
-
-      <SectionTitle title="Bills" />
-      <ScrollView contentContainerStyle={styles.list}>
-        {list.map((b) => {
-          const due = billTotalForItems(b, transactions).totalDue;
-          return (
-            <Pressable
-              key={b.id}
-              onPress={() =>
-                router.push(href(`/(pump)/${companyId}/billing/${b.id}`))
-              }
-            >
-              <Card style={styles.card}>
-                <View style={styles.row}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.billNo}>{b.billNo}</Text>
-                    <Text style={styles.amt}>₹ {due.toLocaleString('en-IN')}</Text>
+      {tab === 'draft' ? (
+        <>
+          <SectionTitle title="Select completed transactions" />
+          <ScrollView contentContainerStyle={styles.list}>
+            {draftItems.map((t) => (
+              <Pressable key={t.id} onPress={() => toggle(t.id)}>
+                <Card style={[styles.card, selected.has(t.id) && styles.cardOn]}>
+                  <View style={styles.row}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.billNo}>{t.vehicleNo}</Text>
+                      <Text style={styles.meta}>
+                        {t.fuel} · {t.actualQty.toFixed(2)} L · ₹
+                        {t.gross.toLocaleString('en-IN')}
+                      </Text>
+                    </View>
+                    <Text style={styles.check}>{selected.has(t.id) ? '☑' : '☐'}</Text>
                   </View>
-                  <Badge status={b.status} />
-                </View>
-              </Card>
-            </Pressable>
-          );
-        })}
-        {list.length === 0 ? (
-          <Text style={styles.empty}>No bills in this tab</Text>
-        ) : null}
-      </ScrollView>
+                </Card>
+              </Pressable>
+            ))}
+            {draftItems.length === 0 ? (
+              <Text style={styles.empty}>No completed transactions available</Text>
+            ) : (
+              <Button
+                title={`Submit (${selected.size})`}
+                onPress={submitDraftSelection}
+                disabled={selected.size === 0}
+              />
+            )}
+          </ScrollView>
+        </>
+      ) : (
+        <>
+          <SectionTitle title="Bills" />
+          <ScrollView contentContainerStyle={styles.list}>
+            {billList.map((b) => {
+              const due = billTotalForItems(b, transactions).totalDue;
+              return (
+                <Pressable
+                  key={b.id}
+                  onPress={() =>
+                    router.push(href(`/(pump)/${companyId}/billing/${b.id}`))
+                  }
+                >
+                  <Card style={styles.card}>
+                    <View style={styles.row}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.billNo}>{b.billNo}</Text>
+                        <Text style={styles.amt}>₹ {due.toLocaleString('en-IN')}</Text>
+                      </View>
+                      <Badge status={b.status} />
+                    </View>
+                  </Card>
+                </Pressable>
+              );
+            })}
+            {billList.length === 0 ? (
+              <Text style={styles.empty}>No bills in this tab</Text>
+            ) : null}
+          </ScrollView>
+        </>
+      )}
     </Screen>
   );
 }
@@ -117,8 +180,11 @@ const styles = StyleSheet.create({
   tabTxtOn: { color: FuelColors.text },
   list: { padding: 16, paddingBottom: 40 },
   card: { marginBottom: 12 },
+  cardOn: { borderWidth: 2, borderColor: FuelColors.primary },
   row: { flexDirection: 'row', alignItems: 'center' },
   billNo: { fontWeight: '800', color: FuelColors.text },
+  meta: { marginTop: 6, color: FuelColors.textSecondary, fontSize: 13 },
   amt: { marginTop: 6, fontSize: 16, fontWeight: '700', color: FuelColors.primary },
+  check: { fontSize: 22, color: FuelColors.primary, marginLeft: 8 },
   empty: { textAlign: 'center', color: FuelColors.textMuted, padding: 24 },
 });

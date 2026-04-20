@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { href } from '@/src/utils/routerHref';
+import { useLocalSearchParams } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
 import {
   Card,
@@ -15,7 +14,6 @@ import {
 import { useApp } from '@/src/context/AppContext';
 
 export default function PumpCompanyCompleted() {
-  const router = useRouter();
   const { companyId } = useLocalSearchParams<{ companyId: string }>();
   const { transactions, currentUser, pumps, users, getCompany, getCompaniesForPump } =
     useApp();
@@ -87,18 +85,6 @@ export default function PumpCompanyCompleted() {
                 {item.rate}
               </Text>
               <Text style={styles.by}>By {filler?.name ?? '—'}</Text>
-              <Text
-                style={styles.link}
-                onPress={() =>
-                  router.push(
-                    href(
-                      `/(pump)/${item.companyId}/billing/new?preselect=${item.id}`
-                    )
-                  )
-                }
-              >
-                Use in new bill →
-              </Text>
             </Card>
           );
         }}
@@ -128,10 +114,4 @@ const styles = StyleSheet.create({
   v: { fontWeight: '800', fontSize: 16, color: FuelColors.text },
   meta: { marginTop: 6, color: FuelColors.textSecondary, fontSize: 13 },
   by: { marginTop: 6, fontSize: 12, color: FuelColors.textMuted },
-  link: {
-    marginTop: 10,
-    color: FuelColors.primary,
-    fontWeight: '700',
-    fontSize: 13,
-  },
 });
