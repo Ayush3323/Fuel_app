@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useGlobalSearchParams, useLocalSearchParams, useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -15,12 +15,36 @@ import { useApp } from '@/src/context/AppContext';
 import type { FuelDiscount } from '@/src/types';
 import { billTotalForItems } from '@/src/utils/billMath';
 
+function parseItemIdsParam(raw?: string) {
+  if (!raw) return [];
+  try {
+    return decodeURIComponent(raw)
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean);
+  } catch {
+    return raw
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+}
+
+function routeParamString(v: string | string[] | undefined): string {
+  if (v == null) return '';
+  return Array.isArray(v) ? String(v[0] ?? '') : String(v);
+}
+
 export default function NewBillScreen() {
   const router = useRouter();
-  const { companyId, itemIds } = useLocalSearchParams<{
-    companyId: string;
-    itemIds?: string;
+  const { itemIds: itemIdsRaw } = useLocalSearchParams<{
+    itemIds?: string | string[];
   }>();
+  const { companyId: companyIdRaw } = useGlobalSearchParams<{
+    companyId: string | string[];
+  }>();
+  const companyId = routeParamString(companyIdRaw);
+  const itemIdsParam = routeParamString(itemIdsRaw);
 
   const {
     getUnbilledTransactions,
@@ -42,12 +66,8 @@ export default function NewBillScreen() {
 
   const [selected, setSelected] = useState<Set<string>>(() => {
     const s = new Set<string>();
-    if (itemIds) {
-      const parsed = decodeURIComponent(itemIds)
-        .split(',')
-        .map((x) => x.trim())
-        .filter(Boolean);
-      for (const id of parsed) s.add(id);
+    for (const id of parseItemIdsParam(itemIdsParam)) {
+      s.add(id);
     }
     return s;
   });

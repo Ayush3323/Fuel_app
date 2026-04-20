@@ -183,6 +183,17 @@ export const SEED_REQUESTS: FuelRequest[] = [
     txnId: 'txn-shree-co2',
   },
   {
+    id: 'req-unbilled-co2-2',
+    companyId: 'co2',
+    pumpId: 'p1',
+    vehicleNo: 'MH14AB4567',
+    fuel: 'HSD',
+    qty: 120,
+    status: 'filled',
+    createdAt: new Date(Date.now() - 1200000).toISOString(),
+    txnId: 'txn-unbilled-co2-2',
+  },
+  {
     id: 'req3',
     companyId: 'co1',
     pumpId: 'p2',
@@ -202,6 +213,17 @@ export const SEED_REQUESTS: FuelRequest[] = [
     status: 'filled',
     createdAt: new Date(Date.now() - 3600000).toISOString(),
     txnId: 'txn-unbilled-1',
+  },
+  {
+    id: 'req-unbilled-co1-2',
+    companyId: 'co1',
+    pumpId: 'p1',
+    vehicleNo: 'HR99ZZ1234',
+    fuel: 'MS',
+    qty: 20,
+    status: 'filled',
+    createdAt: new Date(Date.now() - 1800000).toISOString(),
+    txnId: 'txn-unbilled-co1-2',
   },
 ];
 
@@ -275,7 +297,48 @@ const tShreeCo2: Transaction = {
   filledByUserId: 'u-emp1',
 };
 
-export const SEED_TRANSACTIONS: Transaction[] = [t1, t2, t3, tShreeCo2];
+const tUnbilledCo1_2: Transaction = {
+  id: 'txn-unbilled-co1-2',
+  requestId: 'req-unbilled-co1-2',
+  companyId: 'co1',
+  pumpId: 'p1',
+  vehicleNo: 'HR99ZZ1234',
+  fuel: 'MS',
+  actualQty: 19.5,
+  rate: 96,
+  gross: 1872,
+  extraCash: 0,
+  advance: 0,
+  voucherNo: 'HPE/MS/002',
+  createdAt: new Date(Date.now() - 1800000).toISOString(),
+  filledByUserId: 'u-emp1',
+};
+
+const tUnbilledCo2_2: Transaction = {
+  id: 'txn-unbilled-co2-2',
+  requestId: 'req-unbilled-co2-2',
+  companyId: 'co2',
+  pumpId: 'p1',
+  vehicleNo: 'MH14AB4567',
+  fuel: 'HSD',
+  actualQty: 120,
+  rate: 89.2,
+  gross: 10704,
+  extraCash: 0,
+  advance: 0,
+  voucherNo: 'SHR/HSD/002',
+  createdAt: new Date(Date.now() - 1200000).toISOString(),
+  filledByUserId: 'u-emp1',
+};
+
+export const SEED_TRANSACTIONS: Transaction[] = [
+  t1,
+  t2,
+  t3,
+  tShreeCo2,
+  tUnbilledCo1_2,
+  tUnbilledCo2_2,
+];
 
 export const SEED_BILLS: Bill[] = [
   {

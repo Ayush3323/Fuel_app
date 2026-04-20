@@ -47,7 +47,7 @@ export default function PumpCompanyTabs() {
           ),
         }}
       />
-      <Tabs.Screen name="fill" options={{ href: null }} />
+      <Tabs.Screen name="fill/[requestId]" options={{ href: null }} />
     </Tabs>
   );
 }
