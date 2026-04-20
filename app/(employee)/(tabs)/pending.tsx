@@ -12,6 +12,7 @@ import {
   Input,
   Screen,
   SectionTitle,
+  Header,
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
@@ -40,10 +41,15 @@ export default function EmployeePending() {
 
   return (
     <Screen>
-      <Text style={styles.title}>Pending</Text>
+      <Header title="Incoming Queue" showBack={false} />
+      <View style={styles.topPad} />
       <Text style={styles.sub}>{pump?.name}</Text>
-      <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
-      <View style={styles.search}>
+      
+      <View style={styles.filterSection}>
+        <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
+      </View>
+
+      <View style={styles.searchSection}>
         <Input
           label="Search vehicle"
           value={q}
@@ -51,13 +57,18 @@ export default function EmployeePending() {
           placeholder="e.g. HR55"
         />
       </View>
-      <SectionTitle title="Your queue" />
+
+      <View style={styles.headingWrap}>
+        <SectionTitle title="Awaiting Fills" />
+      </View>
+
       <FlatList
         data={list}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <EmptyState title="No pending requests" subtitle="Wait for company requests" />
+          <EmptyState title="Queue is empty" />
         }
         renderItem={({ item }) => {
           const co = getCompany(item.companyId);
@@ -70,11 +81,13 @@ export default function EmployeePending() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.coTag}>{co?.name ?? 'Company'}</Text>
                     <Text style={styles.v}>{item.vehicleNo}</Text>
-                    <FuelTypePill fuel={item.fuel} />
-                    <Text style={styles.meta}>
-                      {item.isTankFull ? 'Tank Full' : `${item.qty} L`}
-                      {item.extraCash ? ` · Cash: ₹${item.extraCash}` : ''}
-                    </Text>
+                    <View style={styles.metaRow}>
+                      <FuelTypePill fuel={item.fuel} />
+                      <Text style={styles.meta}>
+                        {item.isTankFull ? 'Tank Full' : `${item.qty} L`}
+                        {item.extraCash ? ` · Cash: ₹${item.extraCash}` : ''}
+                      </Text>
+                    </View>
                   </View>
                   <Badge status="pending" />
                 </View>
@@ -88,24 +101,28 @@ export default function EmployeePending() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: FuelColors.text,
-    paddingHorizontal: 20,
-    paddingTop: 16,
+  topPad: { height: 12 },
+  sub: { 
+    color: FuelColors.primary, 
+    paddingHorizontal: 16, 
+    marginBottom: 12, 
+    fontWeight: '800', 
+    fontSize: 14,
+    textTransform: 'uppercase'
   },
-  sub: { color: FuelColors.textSecondary, paddingHorizontal: 20, marginBottom: 4 },
-  search: { paddingHorizontal: 16, marginBottom: 4 },
-  list: { paddingHorizontal: 16, paddingBottom: 32 },
-  card: { marginBottom: 12 },
+  filterSection: { marginBottom: 6 },
+  searchSection: { paddingHorizontal: 16, marginBottom: 12 },
+  headingWrap: { paddingHorizontal: 16 },
+  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  card: { marginBottom: 10, padding: 14 },
   row: { flexDirection: 'row', alignItems: 'flex-start' },
   coTag: {
     fontSize: 11,
     fontWeight: '700',
-    color: FuelColors.primary,
+    color: FuelColors.textSecondary,
     marginBottom: 4,
   },
-  v: { fontSize: 18, fontWeight: '800', color: FuelColors.text },
-  meta: { marginTop: 8, color: FuelColors.textSecondary },
+  v: { fontSize: 16, fontWeight: '800', color: FuelColors.text, marginBottom: 6 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  meta: { color: FuelColors.textSecondary, fontSize: 13, fontWeight: '600' },
 });

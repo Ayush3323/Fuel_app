@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { FuelColors } from '@/constants/theme';
 import {
   Button,
@@ -12,8 +13,6 @@ import {
   Screen,
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
-
-const MOCK_URI = 'https://picsum.photos/seed/fuel/400/300';
 
 export function FillFuelScreen() {
   const { requestId, companyId: routeCompanyId } = useLocalSearchParams<{
@@ -38,9 +37,7 @@ export function FillFuelScreen() {
     return `${rand}/${vNo}`;
   });
   const [extraCash, setExtraCash] = useState(req?.extraCash ? String(req.extraCash) : '');
-  const [advance, setAdvance] = useState('');
   const [vehiclePhoto, setVehiclePhoto] = useState<string>();
-  const [receiptPhoto, setReceiptPhoto] = useState<string>();
 
   const gross = useMemo(() => {
     const q = parseFloat(qty);
@@ -48,6 +45,24 @@ export function FillFuelScreen() {
     if (!q || !r) return 0;
     return Math.round(q * r * 100) / 100;
   }, [qty, rate]);
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission denied', 'We need camera permission to take photos');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setVehiclePhoto(result.assets[0].uri);
+    }
+  };
 
   const submit = () => {
     if (!req || !currentUser) return;
@@ -57,8 +72,8 @@ export function FillFuelScreen() {
       Alert.alert('Required', 'Enter actual quantity and rate');
       return;
     }
-    if (!vehiclePhoto || !receiptPhoto) {
-      Alert.alert('Photos', 'Add vehicle and receipt photos (demo tap)');
+    if (!vehiclePhoto) {
+      Alert.alert('Photo required', 'Please take a photo of the vehicle');
       return;
     }
     fillFuelRequest({
@@ -67,9 +82,8 @@ export function FillFuelScreen() {
       rate: r,
       voucherNo: voucher || undefined,
       vehiclePhoto,
-      receiptPhoto,
+      receiptPhoto: vehiclePhoto,
       extraCash: parseFloat(extraCash) || 0,
-      advance: parseFloat(advance) || 0,
       filledByUserId: currentUser.id,
     });
     Alert.alert('Submitted', 'Request marked complete.', [
@@ -80,7 +94,7 @@ export function FillFuelScreen() {
   if (!req || companyMismatch) {
     return (
       <Screen>
-        <Header title="Fill fuel" />
+        <Header title="Fill Fuel" />
         <Text style={styles.miss}>
           {companyMismatch ? 'Request not for this company' : 'Request not found'}
         </Text>
@@ -90,61 +104,72 @@ export function FillFuelScreen() {
 
   return (
     <Screen key={req.id}>
-      <Header title="Fill fuel" subtitle={pump?.name} />
-      <ScrollView contentContainerStyle={styles.body}>
-        <Card style={styles.req}>
+      <Header title="Fill Fuel" subtitle={pump?.name} />
+      <ScrollView 
+        contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
+      >
+        <Card style={styles.reqCard}>
           <Text style={styles.v}>{req.vehicleNo}</Text>
-          <FuelTypePill fuel={req.fuel} />
-          <Text style={styles.meta}>Asked: {isFullTank ? 'Full Tank' : `${req.qty} L`}</Text>
+          <View style={styles.metaRow}>
+            <FuelTypePill fuel={req.fuel} />
+            <Text style={styles.meta}>Asked: {isFullTank ? 'Full Tank' : `${req.qty} L`}</Text>
+          </View>
         </Card>
 
-        <Input
-          label="Actual quantity (L)"
-          keyboardType="decimal-pad"
-          value={qty}
-          onChangeText={setQty}
-          editable={isFullTank}
-          style={!isFullTank && { backgroundColor: FuelColors.background }}
-        />
-        <Input
-          label="Rate (₹/L)"
-          keyboardType="decimal-pad"
-          value={rate}
-          onChangeText={setRate}
-        />
-        <Text style={styles.gross}>Gross: ₹ {gross.toLocaleString('en-IN')}</Text>
+        <View style={styles.section}>
+          <View style={styles.inputRow}>
+            <View style={{ flex: 1.2 }}>
+              <Input
+                label="Actual qty (L)"
+                keyboardType="decimal-pad"
+                value={qty}
+                onChangeText={setQty}
+                editable={isFullTank}
+                placeholder={isFullTank ? 'Full Tank' : String(req.qty)}
+                style={!isFullTank && styles.disabledInput}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input
+                label="Rate (₹/L)"
+                keyboardType="decimal-pad"
+                value={rate}
+                onChangeText={setRate}
+                placeholder="0.00"
+              />
+            </View>
+          </View>
+          <Text style={styles.gross}>Total: ₹ {gross.toLocaleString('en-IN')}</Text>
+        </View>
 
-        <Input
-          label="Voucher / Txn no."
-          value={voucher}
-          onChangeText={setVoucher}
-          placeholder="e.g. 32410/9044"
-        />
-        <Input
-          label="Extra cash to driver (₹)"
-          keyboardType="decimal-pad"
-          value={extraCash}
-          onChangeText={setExtraCash}
-        />
-        <Input
-          label="Advance (₹)"
-          keyboardType="decimal-pad"
-          value={advance}
-          onChangeText={setAdvance}
-        />
+        <View style={styles.section}>
+          <Input
+            label="Transaction / Voucher No."
+            value={voucher}
+            onChangeText={setVoucher}
+            placeholder="e.g. 32410/9044"
+          />
+          <Input
+            label="Cash to driver (₹)"
+            keyboardType="decimal-pad"
+            value={extraCash}
+            onChangeText={setExtraCash}
+            placeholder="0"
+          />
+        </View>
 
-        <PhotoUploader
-          label="Vehicle photo"
-          uri={vehiclePhoto}
-          onPick={() => setVehiclePhoto(MOCK_URI)}
-        />
-        <PhotoUploader
-          label="Receipt photo"
-          uri={receiptPhoto}
-          onPick={() => setReceiptPhoto(`${MOCK_URI}2`)}
-        />
+        <View style={styles.section}>
+          <PhotoUploader
+            label="Vehicle & Odometer Photo"
+            uri={vehiclePhoto}
+            onPick={takePhoto}
+          />
+        </View>
 
-        <Button title="Submit & complete" onPress={submit} />
+        <View style={styles.btnPad}>
+          <Button title="Complete Fill" onPress={submit} />
+        </View>
       </ScrollView>
     </Screen>
   );
@@ -152,14 +177,19 @@ export function FillFuelScreen() {
 
 const styles = StyleSheet.create({
   miss: { padding: 20, color: FuelColors.danger },
-  body: { padding: 16, paddingBottom: 40 },
-  req: { marginBottom: 16 },
-  v: { fontSize: 20, fontWeight: '800', color: FuelColors.text },
-  meta: { marginTop: 8, color: FuelColors.textSecondary },
+  body: { padding: 16, paddingTop: 16, paddingBottom: 40 },
+  section: { marginBottom: 16 },
+  reqCard: { marginBottom: 16, padding: 12 },
+  v: { fontSize: 18, fontWeight: '800', color: FuelColors.text, marginBottom: 6 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  meta: { color: FuelColors.textSecondary, fontSize: 13, fontWeight: '600' },
+  inputRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
+  disabledInput: { backgroundColor: '#f9f9f9', opacity: 0.8 },
   gross: {
-    fontWeight: '700',
+    fontWeight: '800',
     color: FuelColors.primary,
-    marginBottom: 12,
-    marginTop: -8,
+    fontSize: 14,
+    marginLeft: 2,
   },
+  btnPad: { marginTop: 4 },
 });

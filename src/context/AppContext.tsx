@@ -109,7 +109,7 @@ type AppContextValue = {
     vehiclePhoto?: string;
     receiptPhoto?: string;
     extraCash: number;
-    advance: number;
+    advance?: number;
     filledByUserId: string;
   }) => Transaction | null;
   getUnbilledTransactions: (pumpId: string, companyId: string) => Transaction[];
@@ -381,7 +381,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       vehiclePhoto?: string;
       receiptPhoto?: string;
       extraCash: number;
-      advance: number;
+      advance?: number;
       filledByUserId: string;
     }) => {
       const req = requests.find((r) => r.id === input.requestId);
@@ -400,7 +400,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         vehiclePhoto: input.vehiclePhoto,
         receiptPhoto: input.receiptPhoto,
         extraCash: input.extraCash,
-        advance: input.advance,
+        advance: input.advance || 0,
         voucherNo: input.voucherNo,
         createdAt: new Date().toISOString(),
         filledByUserId: input.filledByUserId,

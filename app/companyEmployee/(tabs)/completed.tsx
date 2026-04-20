@@ -42,7 +42,8 @@ export default function EmployeeCompleted() {
       <Header title="Fill History" showBack={false} />
       <View style={styles.topPad} />
       <Text style={styles.sub}>{company?.name}</Text>
-      <View style={styles.section}>
+      
+      <View style={styles.filterSection}>
         <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
       </View>
       
@@ -55,16 +56,17 @@ export default function EmployeeCompleted() {
         />
       </View>
 
-      <View style={{ paddingHorizontal: 20 }}>
+      <View style={styles.headingWrap}>
         <SectionTitle title="Historical Records" />
       </View>
+
       <FlatList
         data={list}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <EmptyState title="No completed fills yet" />
+          <EmptyState title="No history found" />
         }
         renderItem={({ item }) => {
           const pump = linked.find(p => p.id === item.pumpId);
@@ -77,7 +79,7 @@ export default function EmployeeCompleted() {
                   <FuelTypePill fuel={item.fuel} />
                 </View>
                 <Text style={styles.meta}>
-                  ₹ {item.gross.toLocaleString('en-IN')} · {item.actualQty} L
+                  ₹{item.gross.toLocaleString('en-IN')}{item.extraCash ? ` + ₹${item.extraCash} cash` : ''} · {item.actualQty} L
                 </Text>
               </View>
             </Card>
@@ -89,20 +91,27 @@ export default function EmployeeCompleted() {
 }
 
 const styles = StyleSheet.create({
-  topPad: { height: 24 },
-  sub: { color: FuelColors.textSecondary, paddingHorizontal: 20, marginBottom: 16, fontWeight: '600' },
-  section: { marginBottom: 8 },
-  searchSection: { paddingHorizontal: 20, marginBottom: 16 },
-  list: { paddingHorizontal: 20, paddingBottom: 40 },
-  card: { marginBottom: 12, padding: 16 },
-  coTag: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: FuelColors.primary,
-    marginBottom: 6,
-    textTransform: 'uppercase',
+  topPad: { height: 12 },
+  sub: { 
+    color: FuelColors.primary, 
+    paddingHorizontal: 16, 
+    marginBottom: 12, 
+    fontWeight: '800', 
+    fontSize: 14,
+    textTransform: 'uppercase'
   },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  v: { fontWeight: '800', fontSize: 18, color: FuelColors.text },
-  meta: { color: FuelColors.textSecondary, fontSize: 14, fontWeight: '600' },
+  filterSection: { marginBottom: 6 },
+  searchSection: { paddingHorizontal: 16, marginBottom: 12 },
+  headingWrap: { paddingHorizontal: 16 },
+  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  card: { marginBottom: 10, padding: 14 },
+  coTag: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: FuelColors.textSecondary,
+    marginBottom: 4,
+  },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  v: { fontWeight: '800', fontSize: 16, color: FuelColors.text },
+  meta: { color: FuelColors.textSecondary, fontSize: 13, fontWeight: '600' },
 });

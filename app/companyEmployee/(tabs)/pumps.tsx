@@ -107,7 +107,7 @@ export default function PumpsTabRequest() {
     <Screen>
       <Header title="New Fuel Request" showBack={false} />
       <ScrollView 
-        contentContainerStyle={[styles.body, { paddingTop: 40 }]} 
+        contentContainerStyle={styles.body} 
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -167,7 +167,7 @@ export default function PumpsTabRequest() {
                 value={isTankFull ? '' : qty}
                 onChangeText={setQty}
                 editable={!isTankFull}
-                placeholder={isTankFull ? 'Full Tank' : '0.00'}
+                placeholder={isTankFull ? 'Full' : '0.00'}
                 containerStyle={isTankFull && styles.disabledInput}
               />
             </View>
@@ -191,9 +191,9 @@ export default function PumpsTabRequest() {
             }}
           >
             <View style={[styles.checkbox, isTankFull && styles.checkboxActive]}>
-              {isTankFull && <Ionicons name="checkmark" size={18} color="white" />}
+              {isTankFull && <Ionicons name="checkmark" size={16} color="white" />}
             </View>
-            <Text style={[styles.tankLabel, isTankFull && styles.tankLabelActive]}>Tank Full / Full Tank Request</Text>
+            <Text style={[styles.tankLabel, isTankFull && styles.tankLabelActive]}>Tank Full Request</Text>
           </TouchableOpacity>
         </View>
 
@@ -208,7 +208,7 @@ export default function PumpsTabRequest() {
               >
                 <Card style={[styles.fuelCard, fuel === f && styles.fuelOn]}>
                   <Text style={[styles.fuelTxt, fuel === f && styles.fuelTxtOn]}>
-                    {f === 'HSD' ? 'Diesel (HSD)' : 'Petrol (MS)'}
+                    {f === 'HSD' ? 'Diesel' : 'Petrol'}
                   </Text>
                 </Card>
               </Pressable>
@@ -222,8 +222,8 @@ export default function PumpsTabRequest() {
             value={notes} 
             onChangeText={setNotes} 
             multiline 
-            numberOfLines={3}
-            placeholder="Add any instructions for the pump staff..."
+            numberOfLines={2}
+            placeholder="Instructions for pump..."
           />
         </View>
         
@@ -272,126 +272,125 @@ export default function PumpsTabRequest() {
 }
 
 const styles = StyleSheet.create({
-  body: { padding: 20, paddingBottom: 50 },
+  body: { padding: 16, paddingTop: 16, paddingBottom: 40 },
   co: { 
-    marginBottom: 24, 
+    marginBottom: 16, 
     color: FuelColors.primary, 
     fontWeight: '800', 
-    fontSize: 18,
+    fontSize: 16,
     textTransform: 'uppercase',
     letterSpacing: 0.5
   },
-  section: { marginBottom: 24 },
+  section: { marginBottom: 16 },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: FuelColors.text,
-    marginBottom: 10,
+    marginBottom: 6,
     marginLeft: 2,
   },
   pickerCard: { 
-    padding: 16, 
-    borderWidth: 1.5, 
+    padding: 12, 
+    borderWidth: 1, 
     borderColor: FuelColors.border,
     backgroundColor: FuelColors.surface
   },
   pickerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   pickerTextContent: { flex: 1 },
-  pickerVal: { color: FuelColors.text, fontSize: 17, fontWeight: '700' },
-  pickerSub: { color: FuelColors.textSecondary, fontSize: 13, marginTop: 4 },
-  pickerPlaceholder: { color: FuelColors.textMuted, fontSize: 16 },
+  pickerVal: { color: FuelColors.text, fontSize: 16, fontWeight: '700' },
+  pickerSub: { color: FuelColors.textSecondary, fontSize: 12, marginTop: 2 },
+  pickerPlaceholder: { color: FuelColors.textMuted, fontSize: 15 },
   
   inputWrap: { zIndex: 10, position: 'relative' },
   suggestions: {
     position: 'absolute',
-    top: 80,
+    top: 70,
     left: 0,
     right: 0,
     backgroundColor: FuelColors.surface,
     borderWidth: 1,
     borderColor: FuelColors.border,
-    borderRadius: 12,
+    borderRadius: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
     zIndex: 100,
   },
   suggestionItem: {
-    padding: 16,
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: FuelColors.border,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  suggestionText: { color: FuelColors.text, fontWeight: '700', fontSize: 15 },
+  suggestionText: { color: FuelColors.text, fontWeight: '700', fontSize: 14 },
   
   qtySection: { },
-  inputRow: { flexDirection: 'row', gap: 16, marginBottom: 12 },
+  inputRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
   disabledInput: { opacity: 0.6, backgroundColor: '#f0f0f0' },
   tankToggle: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     alignSelf: 'flex-start',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 2,
   },
   checkbox: { 
-    width: 26, 
-    height: 26, 
+    width: 22, 
+    height: 22, 
     borderWidth: 2, 
     borderColor: FuelColors.primary, 
-    borderRadius: 8, 
-    marginRight: 12,
+    borderRadius: 6, 
+    marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center'
   },
   checkboxActive: { backgroundColor: FuelColors.primary },
-  tankLabel: { fontSize: 15, color: FuelColors.textSecondary, fontWeight: '600' },
+  tankLabel: { fontSize: 14, color: FuelColors.textSecondary, fontWeight: '600' },
   tankLabelActive: { color: FuelColors.primary, fontWeight: '700' },
 
-  fuelRow: { flexDirection: 'row', gap: 12 },
+  fuelRow: { flexDirection: 'row', gap: 10 },
   fuelCard: { 
     flex: 1, 
-    padding: 16, 
+    padding: 12, 
     alignItems: 'center',
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: FuelColors.border
   },
   fuelOn: { borderColor: FuelColors.primary, backgroundColor: FuelColors.primaryMuted },
-  fuelTxt: { textAlign: 'center', color: FuelColors.text, fontSize: 15, fontWeight: '600' },
+  fuelTxt: { textAlign: 'center', color: FuelColors.text, fontSize: 14, fontWeight: '600' },
   fuelTxtOn: { fontWeight: '800', color: FuelColors.primary },
   
-  btnPad: { marginTop: 16 },
+  btnPad: { marginTop: 8 },
   
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { 
     backgroundColor: FuelColors.background, 
-    borderTopLeftRadius: 24, 
-    borderTopRightRadius: 24, 
-    maxHeight: '85%',
-    paddingTop: 10
+    borderTopLeftRadius: 20, 
+    borderTopRightRadius: 20, 
+    maxHeight: '80%',
   },
   modalHeader: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    padding: 24, 
+    padding: 16, 
     borderBottomWidth: 1, 
     borderBottomColor: FuelColors.border 
   },
-  modalTitle: { fontSize: 20, fontWeight: '900', color: FuelColors.text },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: FuelColors.text },
   closeBtn: { padding: 4 },
   pumpItem: { 
-    padding: 20, 
+    padding: 16, 
     borderBottomWidth: 1, 
     borderBottomColor: FuelColors.border,
     flexDirection: 'row',
     alignItems: 'center'
   },
   pumpItemSelected: { backgroundColor: FuelColors.primaryMuted },
-  pumpName: { fontSize: 17, fontWeight: '800', color: FuelColors.text },
+  pumpName: { fontSize: 16, fontWeight: '700', color: FuelColors.text },
   pumpTextSelected: { color: FuelColors.primary },
-  pumpAddr: { fontSize: 13, color: FuelColors.textSecondary, marginTop: 4 },
+  pumpAddr: { fontSize: 13, color: FuelColors.textSecondary, marginTop: 2 },
 });

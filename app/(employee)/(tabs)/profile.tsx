@@ -1,77 +1,91 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { href } from '@/src/utils/routerHref';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { FuelColors } from '@/constants/theme';
-import { Button, Card, Screen } from '@/src/components/ui';
+import { Button, Card, Screen, Header } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
-export default function EmployeeProfile() {
-  const router = useRouter();
-  const { currentUser, pumps, logout, getCompaniesForPump } = useApp();
+export default function PumpEmployeeProfile() {
+  const { currentUser, pumps, logout } = useApp();
   const pumpId = currentUser?.pumpId ?? '';
   const pump = pumps.find((p) => p.id === pumpId);
-  const joined = getCompaniesForPump(pumpId);
 
   return (
     <Screen>
-      <Text style={styles.title}>Profile</Text>
-      <Card style={styles.card}>
-        <Text style={styles.label}>Pump</Text>
-        <Text style={styles.val}>{pump?.name}</Text>
-        <Text style={[styles.label, { marginTop: 12 }]}>Employee</Text>
-        <Text style={styles.val}>{currentUser?.name}</Text>
-        <Text style={[styles.label, { marginTop: 12 }]}>Login</Text>
-        <Text style={styles.val}>{currentUser?.loginId}</Text>
-      </Card>
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>Companies your pump serves</Text>
-        {joined.length === 0 ? (
-          <Text style={styles.empty}>
-            This pump hasn’t joined any company yet.
-          </Text>
-        ) : (
-          joined.map((c) => (
-            <View key={c.id} style={styles.bulletRow}>
-              <Text style={styles.bullet}>•</Text>
-              <Text style={styles.val}>{c.name}</Text>
-            </View>
-          ))
-        )}
-      </Card>
-      <Button
-        title="Sign out"
-        variant="outline"
-        onPress={() => {
-          logout();
-          router.replace(href('/login'));
-        }}
-      />
+      <Header title="My Profile" showBack={false} />
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <View style={styles.topPad} />
+        <View style={styles.header}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarTxt}>
+              {currentUser?.name?.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <Text style={styles.name}>{currentUser?.name}</Text>
+          <Text style={styles.role}>Pump Staff Member</Text>
+        </View>
+
+        <Card style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Assigned Pump</Text>
+            <Text style={styles.val}>{pump?.name || '---'}</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Login Username</Text>
+            <Text style={styles.val}>{currentUser?.loginId}</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Access Level</Text>
+            <Text style={styles.val}>{currentUser?.role}</Text>
+          </View>
+        </Card>
+
+        <View style={styles.btnRow}>
+          <Button
+            title="Sign Out"
+            variant="outline"
+            onPress={logout}
+          />
+        </View>
+        
+        <Text style={styles.version}>FuelFlow v1.0.0</Text>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: FuelColors.text,
-    padding: 20,
+  body: { padding: 16, paddingBottom: 40 },
+  topPad: { height: 16 },
+  header: { alignItems: 'center', marginBottom: 24 },
+  avatar: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: FuelColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: FuelColors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  card: { marginHorizontal: 16, marginBottom: 20 },
-  label: { fontSize: 12, color: FuelColors.textSecondary, fontWeight: '600' },
-  val: { fontSize: 16, color: FuelColors.text, marginTop: 4 },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: FuelColors.text,
-    marginBottom: 10,
-  },
-  empty: { fontSize: 14, color: FuelColors.textMuted, lineHeight: 20 },
-  bulletRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 6 },
-  bullet: {
-    fontSize: 16,
-    color: FuelColors.primary,
-    marginRight: 8,
-    lineHeight: 22,
+  avatarTxt: { fontSize: 28, fontWeight: '800', color: 'white' },
+  name: { fontSize: 20, fontWeight: '800', color: FuelColors.text },
+  role: { fontSize: 13, color: FuelColors.textSecondary, marginTop: 2, fontWeight: '600' },
+  infoCard: { padding: 4, marginBottom: 24 },
+  infoRow: { padding: 14 },
+  label: { fontSize: 12, color: FuelColors.textSecondary, marginBottom: 2, fontWeight: '600' },
+  val: { fontSize: 15, fontWeight: '700', color: FuelColors.text },
+  divider: { height: 1, backgroundColor: FuelColors.border, marginHorizontal: 12 },
+  btnRow: { marginTop: 4 },
+  version: { 
+    textAlign: 'center', 
+    color: FuelColors.textMuted, 
+    fontSize: 11, 
+    marginTop: 24,
+    fontWeight: '500'
   },
 });

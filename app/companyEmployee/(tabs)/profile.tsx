@@ -19,29 +19,29 @@ export default function EmployeeProfile() {
             </Text>
           </View>
           <Text style={styles.name}>{currentUser?.name}</Text>
-          <Text style={styles.role}>Company Employee</Text>
+          <Text style={styles.role}>Company Employee Account</Text>
         </View>
 
         <Card style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Company</Text>
+            <Text style={styles.label}>Company Name</Text>
             <Text style={styles.val}>{company?.name || '---'}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Login ID</Text>
+            <Text style={styles.label}>Login Username</Text>
             <Text style={styles.val}>{currentUser?.loginId}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
-            <Text style={styles.label}>User Role</Text>
+            <Text style={styles.label}>Access Level</Text>
             <Text style={styles.val}>{currentUser?.role}</Text>
           </View>
         </Card>
 
         <View style={styles.btnRow}>
           <Button
-            title="Logout Account"
+            title="Sign Out"
             variant="outline"
             onPress={logout}
           />
@@ -54,37 +54,37 @@ export default function EmployeeProfile() {
 }
 
 const styles = StyleSheet.create({
-  body: { padding: 20, paddingBottom: 40 },
-  topPad: { height: 30 },
-  header: { alignItems: 'center', marginBottom: 32 },
+  body: { padding: 16, paddingBottom: 40 },
+  topPad: { height: 16 },
+  header: { alignItems: 'center', marginBottom: 24 },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: FuelColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: FuelColors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  avatarTxt: { fontSize: 32, fontWeight: '800', color: 'white' },
-  name: { fontSize: 24, fontWeight: '800', color: FuelColors.text },
-  role: { fontSize: 14, color: FuelColors.textSecondary, marginTop: 4, fontWeight: '600' },
-  infoCard: { padding: 8, marginBottom: 32 },
-  infoRow: { padding: 16 },
-  label: { fontSize: 13, color: FuelColors.textSecondary, marginBottom: 4, fontWeight: '600' },
-  val: { fontSize: 16, fontWeight: '700', color: FuelColors.text },
-  divider: { height: 1, backgroundColor: FuelColors.border, marginHorizontal: 16 },
-  btnRow: { marginTop: 8 },
+  avatarTxt: { fontSize: 28, fontWeight: '800', color: 'white' },
+  name: { fontSize: 20, fontWeight: '800', color: FuelColors.text },
+  role: { fontSize: 13, color: FuelColors.textSecondary, marginTop: 2, fontWeight: '600' },
+  infoCard: { padding: 4, marginBottom: 24 },
+  infoRow: { padding: 14 },
+  label: { fontSize: 12, color: FuelColors.textSecondary, marginBottom: 2, fontWeight: '600' },
+  val: { fontSize: 15, fontWeight: '700', color: FuelColors.text },
+  divider: { height: 1, backgroundColor: FuelColors.border, marginHorizontal: 12 },
+  btnRow: { marginTop: 4 },
   version: { 
     textAlign: 'center', 
     color: FuelColors.textMuted, 
-    fontSize: 12, 
-    marginTop: 32,
+    fontSize: 11, 
+    marginTop: 24,
     fontWeight: '500'
   },
 });

@@ -9,6 +9,7 @@ import {
   Input,
   Screen,
   SectionTitle,
+  Header,
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
@@ -39,10 +40,15 @@ export default function EmployeeCompleted() {
 
   return (
     <Screen>
-      <Text style={styles.title}>Completed</Text>
-      <Text style={styles.sub}>Your fills only</Text>
-      <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
-      <View style={styles.search}>
+      <Header title="Your Fills" showBack={false} />
+      <View style={styles.topPad} />
+      <Text style={styles.sub}>History & Records</Text>
+      
+      <View style={styles.filterSection}>
+        <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
+      </View>
+
+      <View style={styles.searchSection}>
         <Input
           label="Search vehicle"
           value={q}
@@ -50,24 +56,33 @@ export default function EmployeeCompleted() {
           placeholder="e.g. HR55"
         />
       </View>
-      <SectionTitle title="History" />
+
+      <View style={styles.headingWrap}>
+        <SectionTitle title="Completed Fills" />
+      </View>
+
       <FlatList
         data={list}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <EmptyState title="No completed fills yet" />
+          <EmptyState title="No history found" />
         }
         renderItem={({ item }) => {
           const co = getCompany(item.companyId);
           return (
             <Card style={styles.card}>
-              <Text style={styles.coTag}>{co?.name ?? 'Company'}</Text>
-              <Text style={styles.v}>{item.vehicleNo}</Text>
-              <FuelTypePill fuel={item.fuel} />
-              <Text style={styles.meta}>
-                ₹{item.gross.toLocaleString('en-IN')} · {item.actualQty} L{item.extraCash ? ` · Cash: ₹${item.extraCash}` : ''}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.coTag}>{co?.name ?? 'Company'}</Text>
+                <View style={styles.row}>
+                  <Text style={styles.v}>{item.vehicleNo}</Text>
+                  <FuelTypePill fuel={item.fuel} />
+                </View>
+                <Text style={styles.meta}>
+                  ₹ {item.gross.toLocaleString('en-IN')}{item.extraCash ? ` + ₹${item.extraCash} cash` : ''} · {item.actualQty} L
+                </Text>
+              </View>
             </Card>
           );
         }}
@@ -77,23 +92,27 @@ export default function EmployeeCompleted() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: FuelColors.text,
-    paddingHorizontal: 20,
-    paddingTop: 16,
+  topPad: { height: 12 },
+  sub: { 
+    color: FuelColors.primary, 
+    paddingHorizontal: 16, 
+    marginBottom: 12, 
+    fontWeight: '800', 
+    fontSize: 14,
+    textTransform: 'uppercase'
   },
-  sub: { color: FuelColors.textSecondary, paddingHorizontal: 20, marginBottom: 4 },
-  search: { paddingHorizontal: 16, marginBottom: 4 },
-  list: { paddingHorizontal: 16, paddingBottom: 32 },
-  card: { marginBottom: 12 },
+  filterSection: { marginBottom: 6 },
+  searchSection: { paddingHorizontal: 16, marginBottom: 12 },
+  headingWrap: { paddingHorizontal: 16 },
+  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  card: { marginBottom: 10, padding: 14 },
   coTag: {
     fontSize: 11,
     fontWeight: '700',
-    color: FuelColors.primary,
+    color: FuelColors.textSecondary,
     marginBottom: 4,
   },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   v: { fontWeight: '800', fontSize: 16, color: FuelColors.text },
-  meta: { marginTop: 6, color: FuelColors.textSecondary, fontSize: 13 },
+  meta: { color: FuelColors.textSecondary, fontSize: 13, fontWeight: '600' },
 });

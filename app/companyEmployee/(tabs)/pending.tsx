@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { href } from '@/src/utils/routerHref';
+import { FlatList, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { FuelColors } from '@/constants/theme';
 import {
   Badge,
@@ -17,7 +15,6 @@ import {
 import { useApp } from '@/src/context/AppContext';
 
 export default function EmployeePending() {
-  const router = useRouter();
   const { requests, currentUser, pumps, getCompany, getPumpsForCompany } = useApp();
   const companyId = currentUser?.companyId ?? '';
   const company = getCompany(companyId);
@@ -45,7 +42,7 @@ export default function EmployeePending() {
       <View style={styles.topPad} />
       <Text style={styles.sub}>{company?.name}</Text>
       
-      <View style={styles.section}>
+      <View style={styles.filterSection}>
         <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
       </View>
 
@@ -58,16 +55,17 @@ export default function EmployeePending() {
         />
       </View>
 
-      <View style={{ paddingHorizontal: 20 }}>
+      <View style={styles.headingWrap}>
         <SectionTitle title="Live Queue" />
       </View>
+
       <FlatList
         data={list}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <EmptyState title="No pending requests" subtitle="Wait for company requests" />
+          <EmptyState title="No pending requests" />
         }
         renderItem={({ item }) => {
           const pump = pumps.find(p => p.id === item.pumpId);
@@ -80,7 +78,7 @@ export default function EmployeePending() {
                   <View style={styles.metaRow}>
                     <FuelTypePill fuel={item.fuel} />
                     <Text style={styles.meta}>
-                      {item.isTankFull ? 'Tank Full' : `${item.qty} L`}
+                      {item.isTankFull ? 'Full Tank' : `${item.qty} L`}
                       {item.extraCash ? ` · ₹${item.extraCash}` : ''}
                     </Text>
                   </View>
@@ -96,21 +94,28 @@ export default function EmployeePending() {
 }
 
 const styles = StyleSheet.create({
-  topPad: { height: 24 },
-  sub: { color: FuelColors.textSecondary, paddingHorizontal: 20, marginBottom: 16, fontWeight: '600' },
-  section: { marginBottom: 8 },
-  searchSection: { paddingHorizontal: 20, marginBottom: 16 },
-  list: { paddingHorizontal: 20, paddingBottom: 40 },
-  card: { marginBottom: 12, padding: 16 },
+  topPad: { height: 12 },
+  sub: { 
+    color: FuelColors.primary, 
+    paddingHorizontal: 16, 
+    marginBottom: 12, 
+    fontWeight: '800', 
+    fontSize: 14,
+    textTransform: 'uppercase'
+  },
+  filterSection: { marginBottom: 6 },
+  searchSection: { paddingHorizontal: 16, marginBottom: 12 },
+  headingWrap: { paddingHorizontal: 16 },
+  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  card: { marginBottom: 10, padding: 14 },
   row: { flexDirection: 'row', alignItems: 'flex-start' },
   coTag: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: FuelColors.primary,
-    marginBottom: 6,
-    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: '700',
+    color: FuelColors.textSecondary,
+    marginBottom: 4,
   },
-  v: { fontSize: 18, fontWeight: '800', color: FuelColors.text, marginBottom: 8 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  meta: { color: FuelColors.textSecondary, fontSize: 14, fontWeight: '600' },
+  v: { fontSize: 16, fontWeight: '800', color: FuelColors.text, marginBottom: 6 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  meta: { color: FuelColors.textSecondary, fontSize: 13, fontWeight: '600' },
 });
