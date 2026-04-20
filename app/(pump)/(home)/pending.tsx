@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
 import {
@@ -15,25 +15,14 @@ import {
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
-export default function PumpCompanyRequests() {
+export default function PumpHomePending() {
   const router = useRouter();
-  const { companyId } = useLocalSearchParams<{ companyId: string }>();
   const { requests, currentUser, pumps, getCompany, getCompaniesForPump } = useApp();
   const pumpId = currentUser?.pumpId ?? '';
   const pump = pumps.find((p) => p.id === pumpId);
   const linked = getCompaniesForPump(pumpId);
-  const [filter, setFilter] = useState<'all' | string>(() =>
-    companyId && linked.some((c) => c.id === companyId) ? companyId : 'all'
-  );
+  const [filter, setFilter] = useState<'all' | string>('all');
   const [q, setQ] = useState('');
-
-  useEffect(() => {
-    if (!companyId || !pumpId) return;
-    const next = getCompaniesForPump(pumpId);
-    if (next.some((c) => c.id === companyId)) {
-      setFilter(companyId);
-    }
-  }, [companyId, pumpId, getCompaniesForPump]);
 
   const list = useMemo(() => {
     let rows = requests.filter(

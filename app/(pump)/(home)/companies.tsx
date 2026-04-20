@@ -1,6 +1,5 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { FuelColors } from '@/constants/theme';
 import { CompanyCard, EmptyState, Screen } from '@/src/components/ui';
 import { useApp, useOutstandingForLink } from '@/src/context/AppContext';
@@ -42,7 +41,7 @@ function CompanyRow({
       outstanding={`₹ ${outstanding.toLocaleString('en-IN')}`}
       pendingCount={pending}
       lastBillLabel={lastLabel}
-      onPress={() => router.push(href(`/(pump)/${companyId}/requests`))}
+      onPress={() => router.push(href(`/(pump)/${companyId}/billing`))}
     />
   );
 }
@@ -84,23 +83,6 @@ export default function PumpCompaniesHome() {
           )}
         />
       )}
-
-      <View style={styles.footer}>
-        <Pressable
-          style={styles.link}
-          onPress={() => router.push(href('/(pump)/(home)/team'))}
-        >
-          <Ionicons name="people-outline" size={20} color={FuelColors.primary} />
-          <Text style={styles.linkTxt}>Team</Text>
-        </Pressable>
-        <Pressable
-          style={styles.link}
-          onPress={() => router.push(href('/(pump)/(home)/profile'))}
-        >
-          <Ionicons name="person-outline" size={20} color={FuelColors.primary} />
-          <Text style={styles.linkTxt}>Profile</Text>
-        </Pressable>
-      </View>
     </Screen>
   );
 }
@@ -123,13 +105,4 @@ const styles = StyleSheet.create({
   },
   joinTxt: { color: '#fff', fontWeight: '800', fontSize: 15 },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: FuelColors.border,
-  },
-  link: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  linkTxt: { color: FuelColors.primary, fontWeight: '700' },
 });

@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
 import {
   Card,
@@ -13,38 +12,25 @@ import {
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
-export default function PumpCompanyCompleted() {
-  const { companyId } = useLocalSearchParams<{ companyId: string }>();
+export default function PumpHomeCompleted() {
   const { transactions, currentUser, pumps, users, getCompany, getCompaniesForPump } =
     useApp();
   const pumpId = currentUser?.pumpId ?? '';
   const pump = pumps.find((p) => p.id === pumpId);
   const linked = getCompaniesForPump(pumpId);
-  const [filter, setFilter] = useState<'all' | string>(() =>
-    companyId && linked.some((c) => c.id === companyId) ? companyId : 'all'
-  );
+  const [filter, setFilter] = useState<'all' | string>('all');
   const [q, setQ] = useState('');
-
-  useEffect(() => {
-    if (!companyId || !pumpId) return;
-    const next = getCompaniesForPump(pumpId);
-    if (next.some((c) => c.id === companyId)) {
-      setFilter(companyId);
-    }
-  }, [companyId, pumpId, getCompaniesForPump]);
 
   const list = useMemo(() => {
     let t = transactions.filter(
-      (x) =>
-        x.pumpId === pumpId && (filter === 'all' || x.companyId === filter)
+      (x) => x.pumpId === pumpId && (filter === 'all' || x.companyId === filter)
     );
     if (q.trim()) {
       const qq = q.trim().toLowerCase();
       t = t.filter((x) => x.vehicleNo.toLowerCase().includes(qq));
     }
     return t.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [transactions, pumpId, filter, q]);
 
@@ -75,14 +61,11 @@ export default function PumpCompanyCompleted() {
           const showCo = filter === 'all';
           return (
             <Card style={styles.card}>
-              {showCo ? (
-                <Text style={styles.coTag}>{co?.name ?? 'Company'}</Text>
-              ) : null}
+              {showCo ? <Text style={styles.coTag}>{co?.name ?? 'Company'}</Text> : null}
               <Text style={styles.v}>{item.vehicleNo}</Text>
               <FuelTypePill fuel={item.fuel} />
               <Text style={styles.meta}>
-                ₹{item.gross.toLocaleString('en-IN')} · {item.actualQty} L @ ₹
-                {item.rate}
+                ₹{item.gross.toLocaleString('en-IN')} · {item.actualQty} L @ ₹{item.rate}
               </Text>
               <Text style={styles.by}>By {filler?.name ?? '—'}</Text>
             </Card>

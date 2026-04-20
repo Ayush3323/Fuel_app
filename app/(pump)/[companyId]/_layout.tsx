@@ -21,27 +21,9 @@ export default function PumpCompanyTabs() {
       }}
     >
       <Tabs.Screen
-        name="requests"
-        options={{
-          title: co?.name?.slice(0, 12) ?? 'Requests',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="flash-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="completed"
-        options={{
-          title: 'Completed',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="checkmark-done-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="billing"
         options={{
-          title: 'Billing',
+          title: co?.name?.slice(0, 12) ?? 'Billing',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt-outline" size={size} color={color} />
           ),
