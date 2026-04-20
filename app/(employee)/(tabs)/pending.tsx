@@ -71,7 +71,10 @@ export default function EmployeePending() {
                     <Text style={styles.coTag}>{co?.name ?? 'Company'}</Text>
                     <Text style={styles.v}>{item.vehicleNo}</Text>
                     <FuelTypePill fuel={item.fuel} />
-                    <Text style={styles.meta}>{item.qty} L</Text>
+                    <Text style={styles.meta}>
+                      {item.isTankFull ? 'Tank Full' : `${item.qty} L`}
+                      {item.extraCash ? ` · Cash: ₹${item.extraCash}` : ''}
+                    </Text>
                   </View>
                   <Badge status="pending" />
                 </View>

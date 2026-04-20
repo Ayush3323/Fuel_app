@@ -21,11 +21,13 @@ const DEV_USERS: { label: string; loginId: string; role: Role }[] = [
   { label: 'Pump 1', loginId: 'pump1', role: 'pumpOwner' },
   { label: 'Pump 2', loginId: 'pump2', role: 'pumpOwner' },
   { label: 'Employee', loginId: 'emp1', role: 'employee' },
+  { label: 'Co Emp', loginId: 'comp', role: 'employee' },
 ];
 
-function routeForRole(role: Role): Href {
-  if (role === 'admin') return href('/(admin)/(tabs)/dashboard');
-  if (role === 'pumpOwner') return href('/(pump)/(home)/companies');
+function routeForRole(user: User): Href {
+  if (user.role === 'admin') return href('/(admin)/(tabs)/dashboard');
+  if (user.role === 'pumpOwner') return href('/(pump)/(home)/companies');
+  if (user.role === 'employee' && user.companyId) return href('/companyEmployee/(tabs)/pending');
   return href('/(employee)/(tabs)/pending');
 }
 
@@ -43,13 +45,13 @@ export default function LoginScreen() {
       setErr('Invalid ID or password');
       return;
     }
-    router.replace(routeForRole(u.role));
+    router.replace(routeForRole(u));
   };
 
   const onDevChip = (lid: string) => {
     devSwitchUser(lid);
     const u = users.find((x) => x.loginId.toLowerCase() === lid.toLowerCase());
-    if (u) router.replace(routeForRole(u.role));
+    if (u) router.replace(routeForRole(u));
   };
 
   return (

@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Alert,
+  FlatList,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,28 +10,36 @@ import {
   View,
   TouchableOpacity,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
 import { Button, Card, Header, Input, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
-import type { FuelType } from '@/src/types';
+import type { FuelType, Pump } from '@/src/types';
 
-export default function NewRequestScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function PumpsTabRequest() {
   const router = useRouter();
-  const { createFuelRequest, currentUser, getCompany, pumps, transactions, requests } = useApp();
+  const { createFuelRequest, currentUser, getCompany, getPumpsForCompany, transactions, requests } = useApp();
   const companyId = currentUser?.companyId ?? '';
   const company = getCompany(companyId);
-  const pump = pumps.find(p => p.id === id);
+  const pumps = getPumpsForCompany(companyId);
 
+  const [selectedPump, setSelectedPump] = useState<Pump | null>(null);
+  const [showPumpPicker, setShowPumpPicker] = useState(false);
   const [vehicleNo, setVehicleNo] = useState('');
   const [qty, setQty] = useState('');
   const [isTankFull, setIsTankFull] = useState(false);
   const [fuel, setFuel] = useState<FuelType>('HSD');
   const [extraCash, setExtraCash] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Default to first pump if available
+  useEffect(() => {
+    if (pumps.length > 0 && !selectedPump) {
+      setSelectedPump(pumps[0]);
+    }
+  }, [pumps]);
 
   // Autocomplete logic for vehicle number
   const vehicleHistory = useMemo(() => {
@@ -56,7 +66,11 @@ export default function NewRequestScreen() {
   const submit = () => {
     const qValue = isTankFull ? 0 : parseFloat(qty);
     const ec = parseFloat(extraCash) || 0;
-
+    
+    if (!selectedPump) {
+      Alert.alert('Selection required', 'Please select a petrol pump');
+      return;
+    }
     if (!vehicleNo.trim()) {
       Alert.alert('Check inputs', 'Enter vehicle number');
       return;
@@ -68,7 +82,7 @@ export default function NewRequestScreen() {
 
     createFuelRequest({
       companyId,
-      pumpId: id!,
+      pumpId: selectedPump.id,
       vehicleNo: vehicleNo.trim().toUpperCase(),
       fuel,
       qty: qValue,
@@ -76,24 +90,53 @@ export default function NewRequestScreen() {
       extraCash: ec > 0 ? ec : undefined,
       notes: notes || undefined,
     });
-    Alert.alert('Request sent', `Request for ${vehicleNo.toUpperCase()} sent to ${pump?.name}.`, [
-      { text: 'OK', onPress: () => router.push(href(`/(admin)/pumps/${id}`)) },
+
+    Alert.alert('Request sent', `Request for ${vehicleNo.toUpperCase()} sent to ${selectedPump.name}.`, [
+      { text: 'OK', onPress: () => {
+        setVehicleNo('');
+        setQty('');
+        setIsTankFull(false);
+        setExtraCash('');
+        setNotes('');
+        router.push(href('/companyEmployee/pending'));
+      }},
     ]);
   };
 
   return (
     <Screen>
-      <Header title="Fuel Request" subtitle={pump?.name}/>
+      <Header title="New Fuel Request" showBack={false} />
       <ScrollView 
-        contentContainerStyle={styles.body} 
+        contentContainerStyle={[styles.body, { paddingTop: 40 }]} 
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.co}>{company?.name}</Text>
-        
+
+        <View style={styles.section}>
+          <Text style={styles.label}>Select Petrol Pump</Text>
+          <Pressable onPress={() => setShowPumpPicker(true)}>
+            <Card style={styles.pickerCard}>
+              <View style={styles.pickerRow}>
+                <View style={styles.pickerTextContent}>
+                  {selectedPump ? (
+                    <>
+                      <Text style={styles.pickerVal}>{selectedPump.name}</Text>
+                      <Text style={styles.pickerSub}>{selectedPump.address}</Text>
+                    </>
+                  ) : (
+                    <Text style={styles.pickerPlaceholder}>Choose a petrol pump</Text>
+                  )}
+                </View>
+                <Ionicons name="chevron-down" size={20} color={FuelColors.primary} />
+              </View>
+            </Card>
+          </Pressable>
+        </View>
+
         <View style={[styles.section, styles.inputWrap]}>
           <Input
-            label="Vehicle Number"
+            label="Vehicle number"
             value={vehicleNo}
             onChangeText={setVehicleNo}
             autoCapitalize="characters"
@@ -130,7 +173,7 @@ export default function NewRequestScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Input
-                label="Extra Cash (optional)"
+                label="Extra Cash"
                 keyboardType="numeric"
                 value={extraCash}
                 onChangeText={setExtraCash}
@@ -155,7 +198,7 @@ export default function NewRequestScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Select Fuel Type</Text>
+          <Text style={styles.label}>Select Fuel type</Text>
           <View style={styles.fuelRow}>
             {(['HSD', 'MS'] as FuelType[]).map((f) => (
               <Pressable
@@ -183,17 +226,53 @@ export default function NewRequestScreen() {
             placeholder="Add any instructions for the pump staff..."
           />
         </View>
-
+        
         <View style={styles.btnPad}>
-          <Button title="Submit Fuel Request" onPress={submit} />
+          <Button title="Submit Request" onPress={submit} />
         </View>
       </ScrollView>
+
+      {/* Pump Selector Modal */}
+      <Modal visible={showPumpPicker} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select a Petrol Pump</Text>
+              <Pressable onPress={() => setShowPumpPicker(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={24} color={FuelColors.text} />
+              </Pressable>
+            </View>
+            <FlatList
+              data={pumps}
+              keyExtractor={item => item.id}
+              contentContainerStyle={{ paddingBottom: 30 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={[styles.pumpItem, selectedPump?.id === item.id && styles.pumpItemSelected]}
+                  onPress={() => {
+                    setSelectedPump(item);
+                    setShowPumpPicker(false);
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.pumpName, selectedPump?.id === item.id && styles.pumpTextSelected]}>{item.name}</Text>
+                    <Text style={styles.pumpAddr}>{item.address}</Text>
+                  </View>
+                  {selectedPump?.id === item.id && (
+                    <Ionicons name="checkmark-circle" size={20} color={FuelColors.primary} />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { padding: 24, paddingTop: 40, paddingBottom: 50 },
+  body: { padding: 20, paddingBottom: 50 },
   co: { 
     marginBottom: 24, 
     color: FuelColors.primary, 
@@ -210,6 +289,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginLeft: 2,
   },
+  pickerCard: { 
+    padding: 16, 
+    borderWidth: 1.5, 
+    borderColor: FuelColors.border,
+    backgroundColor: FuelColors.surface
+  },
+  pickerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  pickerTextContent: { flex: 1 },
+  pickerVal: { color: FuelColors.text, fontSize: 17, fontWeight: '700' },
+  pickerSub: { color: FuelColors.textSecondary, fontSize: 13, marginTop: 4 },
+  pickerPlaceholder: { color: FuelColors.textMuted, fontSize: 16 },
+  
   inputWrap: { zIndex: 10, position: 'relative' },
   suggestions: {
     position: 'absolute',
@@ -273,4 +364,34 @@ const styles = StyleSheet.create({
   fuelTxtOn: { fontWeight: '800', color: FuelColors.primary },
   
   btnPad: { marginTop: 16 },
+  
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalContent: { 
+    backgroundColor: FuelColors.background, 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24, 
+    maxHeight: '85%',
+    paddingTop: 10
+  },
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 24, 
+    borderBottomWidth: 1, 
+    borderBottomColor: FuelColors.border 
+  },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: FuelColors.text },
+  closeBtn: { padding: 4 },
+  pumpItem: { 
+    padding: 20, 
+    borderBottomWidth: 1, 
+    borderBottomColor: FuelColors.border,
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  pumpItemSelected: { backgroundColor: FuelColors.primaryMuted },
+  pumpName: { fontSize: 17, fontWeight: '800', color: FuelColors.text },
+  pumpTextSelected: { color: FuelColors.primary },
+  pumpAddr: { fontSize: 13, color: FuelColors.textSecondary, marginTop: 4 },
 });

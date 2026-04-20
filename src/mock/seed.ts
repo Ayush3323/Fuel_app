@@ -102,6 +102,14 @@ export const SEED_USERS: User[] = [
     pumpId: 'p1',
     createdAt: new Date(Date.now() - 86400000 * 15).toISOString(),
   },
+  {
+    id: 'u-comp-emp1',
+    role: 'employee',
+    name: 'Company Staff',
+    loginId: 'comp',
+    password: 'comp123',
+    companyId: 'co1',
+  },
 ];
 
 export const SEED_PUMPS: Pump[] = [

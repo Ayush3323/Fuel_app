@@ -97,6 +97,8 @@ type AppContextValue = {
     vehicleNo: string;
     fuel: FuelType;
     qty: number;
+    extraCash?: number;
+    isTankFull?: boolean;
     notes?: string;
   }) => FuelRequest;
   fillFuelRequest: (input: {
@@ -347,6 +349,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       vehicleNo: string;
       fuel: FuelType;
       qty: number;
+      extraCash?: number;
+      isTankFull?: boolean;
       notes?: string;
     }) => {
       const r: FuelRequest = {
@@ -358,6 +362,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         qty: input.qty,
         status: 'pending' as RequestStatus,
         notes: input.notes,
+        extraCash: input.extraCash,
+        isTankFull: input.isTankFull,
         createdAt: new Date().toISOString(),
       };
       setRequests((prev) => [...prev, r]);

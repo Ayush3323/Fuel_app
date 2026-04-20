@@ -72,12 +72,19 @@ export default function PumpDetailScreen() {
           <Text style={styles.empty}>No transactions yet</Text>
         }
         renderItem={({ item }) => (
-          <Card style={styles.row}>
-            <Text style={styles.v}>{item.vehicleNo}</Text>
-            <Text style={styles.meta}>
-              {item.fuel} · {item.actualQty.toFixed(2)} L @ ₹{item.rate} = ₹
-              {item.gross.toLocaleString('en-IN')}
-            </Text>
+          <Card style={styles.recordCard}>
+            <View style={styles.recordRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.v}>{item.vehicleNo}</Text>
+                <Text style={styles.meta}>
+                  {item.fuel} · {item.actualQty.toFixed(2)} L @ ₹{item.rate}
+                </Text>
+                <Text style={styles.metaSub}>
+                   ₹{item.gross.toLocaleString('en-IN')}{item.extraCash ? ` + ₹${item.extraCash} cash` : ''}
+                </Text>
+              </View>
+              <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString('en-IN')}</Text>
+            </View>
           </Card>
         )}
       />
@@ -90,8 +97,11 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', gap: 12, paddingHorizontal: 16 },
   cta: { paddingHorizontal: 16, marginVertical: 12 },
   list: { paddingHorizontal: 16, paddingBottom: 32 },
-  row: { marginBottom: 8 },
+  recordCard: { marginBottom: 12 },
+  recordRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   v: { fontWeight: '700', color: FuelColors.text },
   meta: { color: FuelColors.textSecondary, fontSize: 13, marginTop: 4 },
+  metaSub: { color: FuelColors.primary, fontSize: 13, fontWeight: '700', marginTop: 2 },
+  date: { fontSize: 11, color: FuelColors.textMuted },
   empty: { textAlign: 'center', color: FuelColors.textMuted, padding: 20 },
 });

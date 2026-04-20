@@ -29,7 +29,7 @@ export function FillFuelScreen() {
     !!req &&
     req.companyId !== routeCompanyId;
 
-  const isFullTank = req?.qty === 0;
+  const isFullTank = req?.isTankFull || req?.qty === 0;
   const [qty, setQty] = useState(isFullTank ? '' : String(req?.qty ?? ''));
   const [rate, setRate] = useState('');
   const [voucher, setVoucher] = useState(() => {
@@ -37,7 +37,7 @@ export function FillFuelScreen() {
     const rand = Math.floor(10000 + Math.random() * 90000);
     return `${rand}/${vNo}`;
   });
-  const [extraCash, setExtraCash] = useState('');
+  const [extraCash, setExtraCash] = useState(req?.extraCash ? String(req.extraCash) : '');
   const [advance, setAdvance] = useState('');
   const [vehiclePhoto, setVehiclePhoto] = useState<string>();
   const [receiptPhoto, setReceiptPhoto] = useState<string>();

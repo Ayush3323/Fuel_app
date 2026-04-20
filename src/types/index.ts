@@ -64,6 +64,8 @@ export interface FuelRequest {
   qty: number;
   status: RequestStatus;
   notes?: string;
+  extraCash?: number;
+  isTankFull?: boolean;
   createdAt: string;
   filledBy?: string;
   txnId?: string;

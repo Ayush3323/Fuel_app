@@ -66,7 +66,7 @@ export default function EmployeeCompleted() {
               <Text style={styles.v}>{item.vehicleNo}</Text>
               <FuelTypePill fuel={item.fuel} />
               <Text style={styles.meta}>
-                ₹{item.gross.toLocaleString('en-IN')} · {item.actualQty} L
+                ₹{item.gross.toLocaleString('en-IN')} · {item.actualQty} L{item.extraCash ? ` · Cash: ₹${item.extraCash}` : ''}
               </Text>
             </Card>
           );
