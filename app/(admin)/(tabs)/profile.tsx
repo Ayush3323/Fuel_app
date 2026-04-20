@@ -1,54 +1,96 @@
-import { StyleSheet, Text } from 'react-native';
-import { useRouter } from 'expo-router';
-import { href } from '@/src/utils/routerHref';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { FuelColors } from '@/constants/theme';
-import { Button, Card, Screen } from '@/src/components/ui';
+import { Button, Card, Screen, Header } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
 export default function AdminProfile() {
-  const router = useRouter();
   const { currentUser, getCompany, logout } = useApp();
-  const company = currentUser?.companyId
-    ? getCompany(currentUser.companyId)
-    : undefined;
+  const company = getCompany(currentUser?.companyId ?? '');
 
   return (
     <Screen>
-      <Text style={styles.title}>Profile</Text>
-      <Card style={styles.card}>
-        <Text style={styles.label}>Company</Text>
-        <Text style={styles.val}>{company?.name ?? '—'}</Text>
-        {company?.gstin ? (
-          <>
-            <Text style={[styles.label, { marginTop: 12 }]}>GSTIN</Text>
-            <Text style={styles.val}>{company.gstin}</Text>
-          </>
-        ) : null}
-        <Text style={[styles.label, { marginTop: 12 }]}>Signed in as</Text>
-        <Text style={styles.val}>
-          {currentUser?.name} ({currentUser?.loginId})
-        </Text>
-      </Card>
-      <Button
-        title="Sign out"
-        variant="outline"
-        onPress={() => {
-          logout();
-          router.replace(href('/login'));
-        }}
-      />
+      <Header title="Admin Settings" showBack={false} />
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <View style={styles.topPad} />
+        <View style={styles.header}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarTxt}>
+              {currentUser?.name?.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <Text style={styles.name}>{currentUser?.name}</Text>
+          <Text style={styles.role}>Company Administrator</Text>
+        </View>
+
+        <Card style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Company Name</Text>
+            <Text style={styles.val}>{company?.name || '---'}</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Admin ID</Text>
+            <Text style={styles.val}>{currentUser?.loginId}</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Account Status</Text>
+            <Text style={styles.val}>Active Verified</Text>
+          </View>
+        </Card>
+
+        <View style={styles.btnRow}>
+          <Button
+            title="Update Profile"
+            variant="outline"
+            onPress={() => {}}
+            style={{ marginBottom: 12 }}
+          />
+          <Button
+            title="Log Out"
+            variant="outline"
+            onPress={logout}
+          />
+        </View>
+        
+        <Text style={styles.version}>FuelFlow Enterprise v1.2.0</Text>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: FuelColors.text,
-    padding: 20,
+  body: { padding: 16, paddingBottom: 40 },
+  topPad: { height: 16 },
+  header: { alignItems: 'center', marginBottom: 24 },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: FuelColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: FuelColors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  card: { marginHorizontal: 16, marginBottom: 20 },
-  label: { fontSize: 12, color: FuelColors.textSecondary, fontWeight: '600' },
-  val: { fontSize: 16, color: FuelColors.text, marginTop: 4 },
+  avatarTxt: { fontSize: 32, fontWeight: '800', color: 'white' },
+  name: { fontSize: 22, fontWeight: '800', color: FuelColors.text },
+  role: { fontSize: 13, color: FuelColors.textSecondary, marginTop: 4, fontWeight: '600' },
+  infoCard: { padding: 4, marginBottom: 24 },
+  infoRow: { padding: 14 },
+  label: { fontSize: 12, color: FuelColors.textSecondary, marginBottom: 2, fontWeight: '600' },
+  val: { fontSize: 15, fontWeight: '700', color: FuelColors.text },
+  divider: { height: 1, backgroundColor: FuelColors.border, marginHorizontal: 12 },
+  btnRow: { marginTop: 4 },
+  version: { 
+    textAlign: 'center', 
+    color: FuelColors.textMuted, 
+    fontSize: 11, 
+    marginTop: 32,
+    fontWeight: '500'
+  },
 });

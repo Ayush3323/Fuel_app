@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
@@ -39,8 +39,10 @@ export default function PumpDetailScreen() {
   if (!pump) {
     return (
       <Screen>
-        <Header title="Pump" />
-        <Text style={styles.miss}>Not found</Text>
+        <Header title="Pump Details" />
+        <View style={styles.body}>
+          <Text style={styles.miss}>Petrol pump not found or link has been removed.</Text>
+        </View>
       </Screen>
     );
   }
@@ -48,60 +50,71 @@ export default function PumpDetailScreen() {
   return (
     <Screen>
       <Header title={pump.name} subtitle={pump.address} />
-      <View style={styles.stats}>
-        <StatTile
-          label="Outstanding"
-          value={`₹ ${outstanding.toLocaleString('en-IN')}`}
-        />
-        <StatTile label="Pending req." value={String(pending.length)} />
-      </View>
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <View style={styles.statsRow}>
+          <StatTile
+            label="Outstanding Credit"
+            value={`₹${outstanding.toLocaleString('en-IN')}`}
+            style={{ flex: 1.3 }}
+          />
+          <StatTile 
+            label="Pending Req." 
+            value={String(pending.length)} 
+            style={{ flex: 1 }}
+          />
+        </View>
 
-      <View style={styles.cta}>
-        <Button
-          title="New fuel request"
-          onPress={() => router.push(href(`/(admin)/pumps/${id}/request`))}
-        />
-      </View>
+        <View style={styles.cta}>
+          <Button
+            title="New Fuel Request"
+            onPress={() => router.push(href(`/(admin)/pumps/${id}/request`))}
+          />
+        </View>
 
-      <SectionTitle title="Transaction history" />
-      <FlatList
-        data={txns}
-        keyExtractor={(t) => t.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No transactions yet</Text>
-        }
-        renderItem={({ item }) => (
-          <Card style={styles.recordCard}>
-            <View style={styles.recordRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.v}>{item.vehicleNo}</Text>
-                <Text style={styles.meta}>
-                  {item.fuel} · {item.actualQty.toFixed(2)} L @ ₹{item.rate}
-                </Text>
-                <Text style={styles.metaSub}>
-                   ₹{item.gross.toLocaleString('en-IN')}{item.extraCash ? ` + ₹${item.extraCash} cash` : ''}
-                </Text>
+        <View style={styles.headingWrap}>
+          <SectionTitle title="Recent Records" />
+        </View>
+
+        <View style={styles.list}>
+          {txns.map((item) => (
+            <Card key={item.id} style={styles.recordCard}>
+              <View style={styles.recordRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.v}>{item.vehicleNo}</Text>
+                  <Text style={styles.meta}>
+                    {item.fuel} · {item.actualQty.toFixed(1)} L @ ₹{item.rate}
+                  </Text>
+                  <Text style={styles.metaSub}>
+                     ₹{item.gross.toLocaleString('en-IN')}{item.extraCash ? ` + ₹${item.extraCash} cash` : ''}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString('en-IN')}</Text>
+                </View>
               </View>
-              <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString('en-IN')}</Text>
-            </View>
-          </Card>
-        )}
-      />
+            </Card>
+          ))}
+          {txns.length === 0 && (
+            <Text style={styles.empty}>No transaction history for this pump.</Text>
+          )}
+        </View>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  miss: { padding: 20, color: FuelColors.danger },
-  stats: { flexDirection: 'row', gap: 12, paddingHorizontal: 16 },
-  cta: { paddingHorizontal: 16, marginVertical: 12 },
-  list: { paddingHorizontal: 16, paddingBottom: 32 },
-  recordCard: { marginBottom: 12 },
+  body: { padding: 16, paddingTop: 16, paddingBottom: 40 },
+  miss: { padding: 20, color: FuelColors.danger, textAlign: 'center' },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  cta: { marginBottom: 24 },
+  headingWrap: { marginBottom: 6 },
+  list: { },
+  recordCard: { marginBottom: 10, padding: 14 },
   recordRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  v: { fontWeight: '700', color: FuelColors.text },
-  meta: { color: FuelColors.textSecondary, fontSize: 13, marginTop: 4 },
+  v: { fontWeight: '800', fontSize: 16, color: FuelColors.text },
+  meta: { color: FuelColors.textSecondary, fontSize: 13, marginTop: 4, fontWeight: '500' },
   metaSub: { color: FuelColors.primary, fontSize: 13, fontWeight: '700', marginTop: 2 },
   date: { fontSize: 11, color: FuelColors.textMuted },
-  empty: { textAlign: 'center', color: FuelColors.textMuted, padding: 20 },
+  empty: { textAlign: 'center', color: FuelColors.textMuted, padding: 32, fontSize: 14 },
 });

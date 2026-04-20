@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View, ScrollView } from 'react-native';
 import { FuelColors } from '@/constants/theme';
-import { Card, Screen, SectionTitle, StatTile } from '@/src/components/ui';
+import { Card, Screen, SectionTitle, StatTile, Header } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import { billTotalForItems } from '@/src/utils/billMath';
 
@@ -56,68 +56,83 @@ export default function AdminDashboard() {
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
-      .slice(0, 6);
+      .slice(0, 5);
   }, [transactions, companyId]);
 
   return (
     <Screen>
-      <View style={styles.top}>
-        <Text style={styles.title}>Dashboard</Text>
-        <Text style={styles.co}>{company?.name ?? '—'}</Text>
-      </View>
+      <Header title="Admin Dashboard" showBack={false} />
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <Text style={styles.co}>{company?.name}</Text>
 
-      <View style={styles.stats}>
-        <StatTile
-          label="Credit outstanding"
-          value={`₹ ${totalOutstanding.toLocaleString('en-IN')}`}
-        />
-        <StatTile
-          label="Pending requests"
-          value={String(pendingCount)}
-          sub="Linked pumps"
-        />
-      </View>
+        <View style={styles.section}>
+          <View style={styles.statsRow}>
+            <StatTile
+              label="Outstanding Credit"
+              value={`₹${totalOutstanding.toLocaleString('en-IN')}`}
+              style={{ flex: 1.2 }}
+            />
+            <StatTile
+              label="Pending Requests"
+              value={String(pendingCount)}
+              style={{ flex: 1 }}
+            />
+          </View>
+        </View>
 
-      <SectionTitle title="Fuel volume (this company)" />
-      <View style={styles.stats}>
-        <StatTile
-          label="Diesel (HSD) gross"
-          value={`₹ ${hsdMs.hsd.toLocaleString('en-IN')}`}
-        />
-        <StatTile
-          label="Petrol (MS) gross"
-          value={`₹ ${hsdMs.ms.toLocaleString('en-IN')}`}
-        />
-      </View>
+        <View style={styles.section}>
+          <SectionTitle title="Expense Summary" />
+          <View style={styles.statsRow}>
+            <StatTile
+              label="Diesel (HSD)"
+              value={`₹${hsdMs.hsd.toLocaleString('en-IN')}`}
+            />
+            <StatTile
+              label="Petrol (MS)"
+              value={`₹${hsdMs.ms.toLocaleString('en-IN')}`}
+            />
+          </View>
+        </View>
 
-      <SectionTitle title="Recent transactions" />
-      <FlatList
-        data={recent}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        renderItem={({ item }) => (
-          <Card style={styles.row}>
-            <Text style={styles.v}>{item.vehicleNo}</Text>
-            <Text style={styles.meta}>
-              {item.fuel} · ₹{item.gross.toLocaleString('en-IN')}
-            </Text>
-          </Card>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No transactions yet</Text>
-        }
-      />
+        <View style={styles.section}>
+          <SectionTitle title="Recent Fills" />
+          {recent.map((item) => (
+            <Card key={item.id} style={styles.card}>
+              <View style={styles.cardRow}>
+                <View>
+                  <Text style={styles.v}>{item.vehicleNo}</Text>
+                  <Text style={styles.meta}>
+                    {item.fuel} · ₹{item.gross.toLocaleString('en-IN')}
+                  </Text>
+                </View>
+                <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString('en-IN')}</Text>
+              </View>
+            </Card>
+          ))}
+          {recent.length === 0 && (
+            <Text style={styles.empty}>No transaction history available</Text>
+          )}
+        </View>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  top: { padding: 20, paddingBottom: 8 },
-  title: { fontSize: 26, fontWeight: '800', color: FuelColors.text },
-  co: { color: FuelColors.textSecondary, marginTop: 4 },
-  stats: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, marginBottom: 12 },
-  row: { marginHorizontal: 16, marginBottom: 8 },
-  v: { fontWeight: '700', color: FuelColors.text },
+  body: { padding: 16, paddingTop: 16, paddingBottom: 40 },
+  co: { 
+    color: FuelColors.primary, 
+    marginBottom: 20, 
+    fontWeight: '800', 
+    fontSize: 16,
+    textTransform: 'uppercase'
+  },
+  section: { marginBottom: 20 },
+  statsRow: { flexDirection: 'row', gap: 10 },
+  card: { marginBottom: 10, padding: 12 },
+  cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  v: { fontWeight: '800', fontSize: 16, color: FuelColors.text },
   meta: { color: FuelColors.textSecondary, fontSize: 13, marginTop: 4 },
-  empty: { padding: 20, color: FuelColors.textMuted, textAlign: 'center' },
+  date: { fontSize: 11, color: FuelColors.textMuted },
+  empty: { padding: 20, color: FuelColors.textMuted, textAlign: 'center', fontSize: 13 },
 });
