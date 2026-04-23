@@ -1,8 +1,8 @@
+import { FuelColors } from '@/constants/theme';
+import { Badge, Button, Card, Header, Screen, SectionTitle } from '@/src/components/ui';
+import { useApp } from '@/src/context/AppContext';
 import { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { FuelColors } from '@/constants/theme';
-import { Badge, Button, Card, Screen, SectionTitle, Header } from '@/src/components/ui';
-import { useApp } from '@/src/context/AppContext';
 
 export default function AdminInvitesScreen() {
   const { invites, pumps, currentUser, createInvite } = useApp();
@@ -20,10 +20,19 @@ export default function AdminInvitesScreen() {
     [invites, companyId]
   );
 
-  const onGenerate = () => {
-    const inv = createInvite(companyId);
-    setLastCode(inv.code);
-    Alert.alert('Invite Code Generated', `Share code ${inv.code} with the petrol pump operator.`, [{ text: 'OK' }]);
+  const onGenerate = async () => {
+    try {
+      const inv = await createInvite(companyId);
+      setLastCode(inv.code);
+      Alert.alert(
+        'Invite Code Generated',
+        `Share code ${inv.code} with the petrol pump operator. It expires in 5 minutes.`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to generate invite code.';
+      Alert.alert('Invite limit reached', message);
+    }
   };
 
   return (
@@ -51,6 +60,7 @@ export default function AdminInvitesScreen() {
         <View style={styles.list}>
           {list.map((inv) => {
             const redeemed = !!inv.redeemedByPumpId;
+            const isExpired = !redeemed && !!inv.expiresAt && new Date(inv.expiresAt).getTime() <= Date.now();
             const pumpName = inv.redeemedByPumpId
               ? pumps.find((p) => p.id === inv.redeemedByPumpId)?.name ?? inv.redeemedByPumpId
               : null;
@@ -58,13 +68,15 @@ export default function AdminInvitesScreen() {
               <Card key={inv.id} style={styles.card}>
                 <View style={styles.cardRow}>
                   <Text style={styles.codeSm}>{inv.code}</Text>
-                  <Badge status={redeemed ? 'paid' : 'pending'} />
+                  <Badge status={redeemed ? 'paid' : isExpired ? 'expired' : 'pending'} />
                 </View>
                 <Text style={styles.meta}>
                   Generated on {new Date(inv.createdAt).toLocaleDateString()}
                 </Text>
                 {redeemed && pumpName ? (
                   <Text style={styles.redeemed}>Redeemed by {pumpName}</Text>
+                ) : isExpired ? (
+                  <Text style={styles.expired}>Expired</Text>
                 ) : !redeemed ? (
                   <Text style={styles.active}>Available for use</Text>
                 ) : null}
@@ -120,5 +132,6 @@ const styles = StyleSheet.create({
   meta: { fontSize: 12, color: FuelColors.textMuted, marginTop: 6 },
   redeemed: { marginTop: 8, fontSize: 13, color: FuelColors.success, fontWeight: '600' },
   active: { marginTop: 8, fontSize: 13, color: FuelColors.warning, fontWeight: '600' },
+  expired: { marginTop: 8, fontSize: 13, color: FuelColors.textMuted, fontWeight: '600' },
   empty: { textAlign: 'center', color: FuelColors.textMuted, padding: 32, fontSize: 14 },
 });

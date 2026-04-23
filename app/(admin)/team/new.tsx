@@ -6,10 +6,10 @@ import { FuelColors } from '@/constants/theme';
 import { Button, Card, Header, Input, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
-export default function NewEmployeeScreen() {
+export default function NewCompanyEmployeeScreen() {
   const router = useRouter();
-  const { createEmployee, currentUser } = useApp();
-  const pumpId = currentUser?.pumpId!;
+  const { createCompanyEmployee, currentUser } = useApp();
+  const companyId = currentUser?.companyId ?? '';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
 
@@ -18,7 +18,7 @@ export default function NewEmployeeScreen() {
       Alert.alert('Name and email required');
       return;
     }
-    await createEmployee(pumpId, name.trim(), email.trim());
+    await createCompanyEmployee(companyId, name.trim(), email.trim());
     Alert.alert('Invite sent', `${email.trim()} can now complete signup from the login screen.`, [
       { text: 'OK', onPress: () => router.back() },
     ]);
@@ -26,22 +26,23 @@ export default function NewEmployeeScreen() {
 
   return (
     <Screen style={styles.screen}>
-      <Header title="Add Team Member" />
-      
+      <Header title="Add Company Employee" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         <View style={styles.introSection}>
           <View style={styles.iconCircle}>
             <Ionicons name="person-add" size={32} color={FuelColors.primary} />
           </View>
-          <Text style={styles.title}>Create Access</Text>
-          <Text style={styles.subtitle}>Enter employee name and email to send password setup invite.</Text>
+          <Text style={styles.title}>Create Company Access</Text>
+          <Text style={styles.subtitle}>
+            Enter employee name and email to send company employee signup invite.
+          </Text>
         </View>
 
         <Card style={styles.formCard}>
-          <Input 
-            label="Employee Display Name" 
-            value={name} 
-            onChangeText={setName} 
+          <Input
+            label="Employee Display Name"
+            value={name}
+            onChangeText={setName}
             placeholder="e.g. Rahul Sharma"
             style={styles.input}
           />
@@ -56,9 +57,9 @@ export default function NewEmployeeScreen() {
           />
         </Card>
 
-        <Button 
-          title="Create Employee" 
-          onPress={onCreate} 
+        <Button
+          title="Create Employee"
+          onPress={onCreate}
           style={styles.submitBtn}
           disabled={!name.trim() || !email.trim()}
         />
@@ -70,10 +71,7 @@ export default function NewEmployeeScreen() {
 const styles = StyleSheet.create({
   screen: { backgroundColor: FuelColors.background },
   body: { padding: 20, paddingBottom: 40 },
-  introSection: {
-    alignItems: 'center',
-    marginVertical: 24,
-  },
+  introSection: { alignItems: 'center', marginVertical: 24 },
   iconCircle: {
     width: 72,
     height: 72,
@@ -83,11 +81,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: FuelColors.text,
-  },
+  title: { fontSize: 24, fontWeight: '900', color: FuelColors.text },
   subtitle: {
     fontSize: 14,
     color: FuelColors.textSecondary,
@@ -96,16 +90,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     lineHeight: 20,
   },
-  formCard: {
-    padding: 20,
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: FuelColors.surface,
-  },
-  submitBtn: {
-    marginTop: 8,
-    borderRadius: 18,
-    elevation: 4,
-  },
+  formCard: { padding: 20, marginBottom: 20 },
+  input: { backgroundColor: FuelColors.surface },
+  submitBtn: { marginTop: 8, borderRadius: 18 },
 });

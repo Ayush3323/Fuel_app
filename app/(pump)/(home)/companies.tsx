@@ -1,7 +1,7 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
-import { Card, CompanyCard, EmptyState, Header, Screen, SectionTitle } from '@/src/components/ui';
+import { CompanyCard, EmptyState, Header, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp, useOutstandingForLink } from '@/src/context/AppContext';
 import { href } from '@/src/utils/routerHref';
 
@@ -48,7 +48,7 @@ function CompanyRow({
 
 export default function PumpCompaniesHome() {
   const router = useRouter();
-  const { currentUser, pumps, getCompaniesForPump, requests } = useApp();
+  const { currentUser, pumps, getCompaniesForPump } = useApp();
   const pumpId = currentUser?.pumpId ?? '';
   const pump = pumps.find((p) => p.id === pumpId);
   const companies = getCompaniesForPump(pumpId);

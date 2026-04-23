@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
 import {
-  Badge,
   Card,
   CompanyFilterBar,
   EmptyState,

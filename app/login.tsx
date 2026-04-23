@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,16 +12,8 @@ import { FuelColors } from '@/constants/theme';
 import { href } from '@/src/utils/routerHref';
 import { Button, Card, Input, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
-import type { Role } from '@/src/types';
-
-const DEV_USERS: { label: string; loginId: string; role: Role }[] = [
-  { label: 'Karma Co', loginId: 'admin', role: 'admin' },
-  { label: 'Shree Co', loginId: 'shree', role: 'admin' },
-  { label: 'Pump 1', loginId: 'pump1', role: 'pumpOwner' },
-  { label: 'Pump 2', loginId: 'pump2', role: 'pumpOwner' },
-  { label: 'Employee', loginId: 'emp1', role: 'employee' },
-  { label: 'Co Emp', loginId: 'comp', role: 'employee' },
-];
+import type { User } from '@/src/types';
+import { sendPasswordReset } from '@/src/firebase/auth';
 
 function routeForRole(user: User): Href {
   if (user.role === 'admin') return href('/(admin)/(tabs)/dashboard');
@@ -33,25 +24,38 @@ function routeForRole(user: User): Href {
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, devSwitchUser, users } = useApp();
-  const [loginId, setLoginId] = useState('');
+  const { login } = useApp();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
 
-  const onLogin = () => {
+  const onLogin = async () => {
     setErr('');
-    const u = login(loginId.trim(), password);
+    let u = null;
+    try {
+      u = await login(email.trim(), password);
+    } catch {
+      setErr('Invalid email or password');
+      return;
+    }
     if (!u) {
-      setErr('Invalid ID or password');
+      setErr('Invalid email or password');
       return;
     }
     router.replace(routeForRole(u));
   };
 
-  const onDevChip = (lid: string) => {
-    devSwitchUser(lid);
-    const u = users.find((x) => x.loginId.toLowerCase() === lid.toLowerCase());
-    if (u) router.replace(routeForRole(u));
+  const onForgotPassword = async () => {
+    if (!email.trim()) {
+      setErr('Enter email first to reset password');
+      return;
+    }
+    try {
+      await sendPasswordReset(email.trim());
+      setErr('Password reset email sent');
+    } catch {
+      setErr('Could not send reset email');
+    }
   };
 
   return (
@@ -69,11 +73,12 @@ export default function LoginScreen() {
 
           <Card style={styles.card}>
             <Input
-              label="User ID"
+              label="Email"
               autoCapitalize="none"
-              value={loginId}
-              onChangeText={setLoginId}
-              placeholder="e.g. admin"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@company.com"
             />
             <Input
               label="Password"
@@ -84,6 +89,7 @@ export default function LoginScreen() {
             />
             {err ? <Text style={styles.err}>{err}</Text> : null}
             <Button title="Sign in" onPress={onLogin} />
+            <Button title="Forgot password" variant="outline" onPress={onForgotPassword} />
           </Card>
 
           <View style={styles.regRow}>
@@ -97,26 +103,12 @@ export default function LoginScreen() {
               variant="secondary"
               onPress={() => router.push(href('/register-pump'))}
             />
+            <Button
+              title="Employee signup"
+              variant="secondary"
+              onPress={() => router.push(href('/register-employee'))}
+            />
           </View>
-
-          <Text style={styles.devTitle}>Dev: jump as</Text>
-          <View style={styles.chips}>
-            {DEV_USERS.map((d) => (
-              <Pressable
-                key={d.loginId}
-                onPress={() => onDevChip(d.loginId)}
-                style={({ pressed }) => [
-                  styles.chip,
-                  pressed && { opacity: 0.85 },
-                ]}
-              >
-                <Text style={styles.chipText}>{d.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Text style={styles.devNote}>
-            Demo only — switches user without password check.
-          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -141,23 +133,4 @@ const styles = StyleSheet.create({
   card: { marginBottom: 16 },
   err: { color: FuelColors.danger, marginBottom: 12, fontSize: 14 },
   regRow: { gap: 10, marginBottom: 24 },
-  devTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: FuelColors.textMuted,
-    marginBottom: 8,
-  },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    backgroundColor: FuelColors.primaryMuted,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  chipText: { color: FuelColors.primary, fontWeight: '700', fontSize: 13 },
-  devNote: {
-    marginTop: 16,
-    fontSize: 11,
-    color: FuelColors.textMuted,
-  },
 });

@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
-import { FlatList, StyleSheet, Text, View, ScrollView } from 'react-native';
 import { FuelColors } from '@/constants/theme';
-import { Card, Screen, SectionTitle, StatTile, Header } from '@/src/components/ui';
+import { Card, Header, Screen, SectionTitle, StatTile } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import { billTotalForItems } from '@/src/utils/billMath';
+import { useMemo } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function AdminDashboard() {
   const { requests, transactions, bills, currentUser, getCompany, getPumpsForCompany } =

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useGlobalSearchParams, useLocalSearchParams, useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FuelColors } from '@/constants/theme';
 import {
@@ -50,11 +50,9 @@ export default function NewBillScreen() {
   const itemIdsParam = routeParamString(itemIdsRaw);
 
   const {
-    getUnbilledTransactions,
     currentUser,
     getCompany,
     createBill,
-    raiseBill,
     transactions,
     pumps,
   } = useApp();
@@ -62,12 +60,7 @@ export default function NewBillScreen() {
   const pump = pumps.find((p) => p.id === pumpId);
   const company = companyId ? getCompany(companyId) : undefined;
 
-  const unbilled = useMemo(
-    () => getUnbilledTransactions(pumpId, companyId),
-    [getUnbilledTransactions, pumpId, companyId]
-  );
-
-  const [selected, setSelected] = useState<Set<string>>(() => {
+  const [selected] = useState<Set<string>>(() => {
     const s = new Set<string>();
     for (const id of parseItemIdsParam(itemIdsParam)) {
       s.add(id);

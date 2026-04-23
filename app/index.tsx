@@ -3,13 +3,25 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
 import { href } from '@/src/utils/routerHref';
+import { useApp } from '@/src/context/AppContext';
+import type { User } from '@/src/types';
+
+function routeForRole(user: User) {
+  if (user.role === 'admin') return href('/(admin)/(tabs)/dashboard');
+  if (user.role === 'pumpOwner') return href('/(pump)/(home)/companies');
+  if (user.role === 'employee' && user.companyId) return href('/companyEmployee/(tabs)/pending');
+  return href('/(employee)/(tabs)/pending');
+}
 
 export default function SplashScreen() {
   const router = useRouter();
+  const { currentUser, authReady } = useApp();
   useEffect(() => {
-    const t = setTimeout(() => router.replace(href('/login')), 700);
+    if (!authReady) return;
+    const next = currentUser ? routeForRole(currentUser) : href('/login');
+    const t = setTimeout(() => router.replace(next), 400);
     return () => clearTimeout(t);
-  }, [router]);
+  }, [router, currentUser, authReady]);
 
   return (
     <View style={styles.container}>

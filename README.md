@@ -1,37 +1,69 @@
-# Fuel Credit (UI demo)
+# Fuel Credit (Firebase backend)
 
-UI-only **Fuel Credit Management**: companies and pumps **self-register**; companies **invite pumps** with a 6-character code; pumps **join** from their Companies screen. Fuel requests, fills, and bills are scoped to `(companyId, pumpId)`.
+Fuel Credit now runs on Firebase Auth + Firestore with the existing multi-company frontend.
 
-## Run
+## Backend stack
+
+- React Native Firebase: `@react-native-firebase/app`, `auth`, `firestore`
+- Auth: Email + password
+- Database: Cloud Firestore
+- Data model source: `src/types/index.ts`
+
+## Setup
+
+1. Keep `google-services.json` at project root (already added).
+2. In Firebase Console:
+   - Enable **Authentication > Email/Password**.
+   - Create Firestore database in production mode.
+   - Publish rules from `src/firebase/rules.txt`.
+3. Install dependencies:
 
 ```bash
 npm install
-npx expo start
 ```
 
-## Demo logins (seeded)
+## Dev client (Expo Go not supported)
 
-| Role | User ID | Password |
-|------|---------|----------|
-| Company (Karma) | `admin` | `admin123` |
-| Company (Shree) | `shree` | `shree123` |
-| Pump owner (HPE) | `pump1` | `pump123` |
-| Pump owner (Ellar) | `pump2` | `pump123` |
-| Employee (on HPE) | `emp1` | `emp123` |
+Because RN Firebase is native, run with a dev client:
 
-**Dev chips** on the login screen switch users without a password.
+```bash
+npx expo prebuild
+npx expo run:android
+npx expo start --dev-client
+```
 
-## Join flow (demo)
+Or with EAS:
 
-- Pump `p1` starts linked only to **Karma** (`co1`). Use **Invites** on the Shree company (`shree`) to generate a code, or use the pre-seeded unused code **`ABC123`** (company Shree) on the pump’s **Join** screen to link Shree.
-- After redeeming, Shree appears on the pump’s **Companies** list; open it for per-company requests / billing.
+```bash
+eas build --profile development --platform android
+npx expo start --dev-client
+```
 
-## Register (new accounts)
+## Auth flows implemented
 
-From login: **Register company** or **Register pump** (in-memory; no backend).
+- Company register: email + password
+- Pump register: email + password
+- Login: email + password + forgot-password
+- Pump employee invite:
+  - Pump owner enters employee name + email.
+  - App stores invite in `pendingEmployees/{email}`.
+  - Employee uses **Employee signup** on login, then first login claims the pending record and creates their `users/{uid}` document.
 
-## Stack
+## Firestore collections
 
-- Expo Router — [`app/`](app/)
-- State: [`src/context/AppContext.tsx`](src/context/AppContext.tsx)
-- Types / seed: [`src/types/index.ts`](src/types/index.ts), [`src/mock/seed.ts`](src/mock/seed.ts)
+- `users`
+- `companies`
+- `pumps`
+- `companyPumpLinks`
+- `pumpInvites`
+- `pendingEmployees`
+- `fuelRequests`
+- `transactions`
+- `bills`
+
+## Optional seed (dev only)
+
+To seed Firestore from mock data, use:
+
+- Script: `scripts/seedFirestore.ts`
+- Source data: `src/mock/seed.ts`

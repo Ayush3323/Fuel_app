@@ -17,22 +17,29 @@ export default function RegisterCompanyScreen() {
   const { registerCompany } = useApp();
   const [name, setName] = useState('');
   const [gstin, setGstin] = useState('');
-  const [loginId, setLoginId] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [ownerName, setOwnerName] = useState('');
+  const [err, setErr] = useState('');
 
-  const onSubmit = () => {
-    if (!name.trim() || !loginId.trim() || !password.trim()) {
+  const onSubmit = async () => {
+    setErr('');
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setErr('Company name, email and password are required');
       return;
     }
-    registerCompany({
-      name: name.trim(),
-      gstin: gstin.trim() || undefined,
-      loginId: loginId.trim(),
-      password,
-      ownerDisplayName: ownerName.trim() || undefined,
-    });
-    router.replace(href('/(admin)/(tabs)/dashboard') as Href);
+    try {
+      await registerCompany({
+        name: name.trim(),
+        gstin: gstin.trim() || undefined,
+        email: email.trim(),
+        password,
+        ownerDisplayName: ownerName.trim() || undefined,
+      });
+      router.replace(href('/(admin)/(tabs)/dashboard') as Href);
+    } catch (e: any) {
+      setErr(e?.message || 'Could not create company account');
+    }
   };
 
   return (
@@ -61,10 +68,11 @@ export default function RegisterCompanyScreen() {
               placeholder="e.g. Rahul Sharma"
             />
             <Input
-              label="Login ID"
+              label="Email"
               autoCapitalize="none"
-              value={loginId}
-              onChangeText={setLoginId}
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
             />
             <Input
               label="Password"
@@ -72,6 +80,7 @@ export default function RegisterCompanyScreen() {
               value={password}
               onChangeText={setPassword}
             />
+            {err ? <Text style={styles.err}>{err}</Text> : null}
             <Button title="Create account" onPress={onSubmit} />
           </Card>
           <Button
@@ -89,4 +98,5 @@ const styles = StyleSheet.create({
   body: { padding: 20, paddingBottom: 40 },
   title: { fontSize: 24, fontWeight: '800', color: FuelColors.text },
   sub: { color: FuelColors.textSecondary, marginVertical: 16, lineHeight: 22 },
+  err: { color: FuelColors.danger, marginBottom: 10, fontSize: 13 },
 });

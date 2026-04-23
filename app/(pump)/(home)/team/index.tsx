@@ -47,7 +47,7 @@ export default function PumpTeam() {
                   <Text style={styles.name}>{u.name}</Text>
                   <View style={styles.loginRow}>
                     <Ionicons name="person-outline" size={12} color={FuelColors.textMuted} />
-                    <Text style={styles.meta}>{u.loginId}</Text>
+                    <Text style={styles.meta}>{u.email}</Text>
                   </View>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={FuelColors.textMuted} />

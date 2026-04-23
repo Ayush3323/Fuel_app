@@ -1,18 +1,34 @@
 import React, { type ReactNode } from 'react';
-import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type StyleProp,
+  type TextInputProps,
+  type ViewStyle,
+} from 'react-native';
 import { FuelColors } from '@/constants/theme';
 
 type Props = TextInputProps & {
   label?: string;
   error?: string;
   leftIcon?: ReactNode;
+  containerStyle?: StyleProp<ViewStyle>;
 };
 
-export function Input({ label, error, style, leftIcon, ...rest }: Props) {
+export function Input({
+  label,
+  error,
+  style,
+  leftIcon,
+  containerStyle,
+  ...rest
+}: Props) {
   return (
     <View style={styles.wrap}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <View style={[styles.inputContainer, error && styles.inputError, style as any]}>
+      <View style={[styles.inputContainer, error && styles.inputError, containerStyle, style as any]}>
         {leftIcon && <View style={styles.iconBox}>{leftIcon}</View>}
         <TextInput
           placeholderTextColor={FuelColors.textMuted}

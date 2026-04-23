@@ -1,5 +1,5 @@
 import { FuelColors } from '@/constants/theme';
-import { Badge, Card, Screen, SectionTitle, Header } from '@/src/components/ui';
+import { Badge, Card, Header, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import { billTotalForItems } from '@/src/utils/billMath';
 import { href } from '@/src/utils/routerHref';

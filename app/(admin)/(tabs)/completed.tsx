@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { FuelColors } from '@/constants/theme';
 import {
-  Badge,
   Card,
   CompanyFilterBar,
   EmptyState,
@@ -14,34 +13,35 @@ import {
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
-export default function EmployeePending() {
-  const { requests, currentUser, pumps, getCompany, getPumpsForCompany } = useApp();
+export default function AdminCompletedRequests() {
+  const { transactions, currentUser, getPumpsForCompany, getCompany } = useApp();
   const companyId = currentUser?.companyId ?? '';
-  const company = getCompany(companyId);
   const linked = getPumpsForCompany(companyId);
+  const company = getCompany(companyId);
   const [filter, setFilter] = useState<'all' | string>('all');
   const [q, setQ] = useState('');
 
   const list = useMemo(() => {
-    let rows = requests.filter(
-      (r) =>
-        r.companyId === companyId &&
-        r.status === 'pending' &&
-        (filter === 'all' || r.pumpId === filter)
+    let rows = transactions.filter(
+      (t) =>
+        t.companyId === companyId &&
+        (filter === 'all' || t.pumpId === filter)
     );
     if (q.trim()) {
       const qq = q.trim().toLowerCase();
-      rows = rows.filter((r) => r.vehicleNo.toLowerCase().includes(qq));
+      rows = rows.filter((t) => t.vehicleNo.toLowerCase().includes(qq));
     }
-    return rows;
-  }, [requests, companyId, filter, q]);
+    return rows.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [transactions, companyId, filter, q]);
 
   return (
     <Screen>
-      <Header title="Pending Requests" showBack={false} />
+      <Header title="Completed Fills" showBack={false} />
       <View style={styles.topPad} />
       <Text style={styles.sub}>{company?.name}</Text>
-      
+
       <View style={styles.filterSection}>
         <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
       </View>
@@ -56,7 +56,7 @@ export default function EmployeePending() {
       </View>
 
       <View style={styles.headingWrap}>
-        <SectionTitle title="Live Queue" />
+        <SectionTitle title="Historical Records" />
       </View>
 
       <FlatList
@@ -64,26 +64,21 @@ export default function EmployeePending() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <EmptyState title="No pending requests" />
-        }
+        ListEmptyComponent={<EmptyState title="No history found" />}
         renderItem={({ item }) => {
-          const pump = pumps.find(p => p.id === item.pumpId);
+          const pump = linked.find((p) => p.id === item.pumpId);
           return (
             <Card style={styles.card}>
-              <View style={styles.row}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.coTag}>{pump?.name ?? 'Pump'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.coTag}>{pump?.name ?? 'Pump'}</Text>
+                <View style={styles.row}>
                   <Text style={styles.v}>{item.vehicleNo}</Text>
-                  <View style={styles.metaRow}>
-                    <FuelTypePill fuel={item.fuel} />
-                    <Text style={styles.meta}>
-                      {item.isTankFull ? 'Full Tank' : `${item.qty} L`}
-                      {item.extraCash ? ` · ₹${item.extraCash}` : ''}
-                    </Text>
-                  </View>
+                  <FuelTypePill fuel={item.fuel} />
                 </View>
-                <Badge status="pending" />
+                <Text style={styles.meta}>
+                  ₹{item.gross.toLocaleString('en-IN')}
+                  {item.extraCash ? ` + ₹${item.extraCash} cash` : ''} · {item.actualQty} L
+                </Text>
               </View>
             </Card>
           );
@@ -95,27 +90,26 @@ export default function EmployeePending() {
 
 const styles = StyleSheet.create({
   topPad: { height: 12 },
-  sub: { 
-    color: FuelColors.primary, 
-    paddingHorizontal: 16, 
-    marginBottom: 12, 
-    fontWeight: '800', 
+  sub: {
+    color: FuelColors.primary,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    fontWeight: '800',
     fontSize: 14,
-    textTransform: 'uppercase'
+    textTransform: 'uppercase',
   },
   filterSection: { marginBottom: 6 },
   searchSection: { paddingHorizontal: 16, marginBottom: 12 },
   headingWrap: { paddingHorizontal: 16 },
   list: { paddingHorizontal: 16, paddingBottom: 40 },
   card: { marginBottom: 10, padding: 14 },
-  row: { flexDirection: 'row', alignItems: 'flex-start' },
   coTag: {
     fontSize: 11,
     fontWeight: '700',
     color: FuelColors.textSecondary,
     marginBottom: 4,
   },
-  v: { fontSize: 16, fontWeight: '800', color: FuelColors.text, marginBottom: 6 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  v: { fontWeight: '800', fontSize: 16, color: FuelColors.text },
   meta: { color: FuelColors.textSecondary, fontSize: 13, fontWeight: '600' },
 });

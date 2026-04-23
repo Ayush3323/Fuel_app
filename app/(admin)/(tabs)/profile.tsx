@@ -30,7 +30,7 @@ export default function AdminProfile() {
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <Text style={styles.label}>Admin ID</Text>
-            <Text style={styles.val}>{currentUser?.loginId}</Text>
+            <Text style={styles.val}>{currentUser?.email}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
@@ -49,7 +49,9 @@ export default function AdminProfile() {
           <Button
             title="Log Out"
             variant="outline"
-            onPress={logout}
+            onPress={async () => {
+              await logout();
+            }}
           />
         </View>
         

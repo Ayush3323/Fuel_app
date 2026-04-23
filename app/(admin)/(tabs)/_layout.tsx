@@ -34,12 +34,27 @@ export default function AdminTabs() {
         }}
       />
       <Tabs.Screen
+        name="pending"
+        options={{
+          title: 'Pending',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="time-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="completed"
+        options={{
+          title: 'Completed',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="checkmark-circle-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="invites"
         options={{
-          title: 'Invites',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="key-outline" size={size} color={color} />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -48,6 +63,15 @@ export default function AdminTabs() {
           title: 'Bills',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="document-text-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="team"
+        options={{
+          title: 'Team',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people-outline" size={size} color={color} />
           ),
         }}
       />

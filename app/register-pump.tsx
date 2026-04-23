@@ -19,29 +19,36 @@ export default function RegisterPumpScreen() {
   const [pumpName, setPumpName] = useState('');
   const [address, setAddress] = useState('');
   const [contact, setContact] = useState('');
-  const [loginId, setLoginId] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [ownerName, setOwnerName] = useState('');
+  const [err, setErr] = useState('');
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
+    setErr('');
     if (
       !pumpName.trim() ||
       !address.trim() ||
       !contact.trim() ||
-      !loginId.trim() ||
+      !email.trim() ||
       !password.trim()
     ) {
+      setErr('All required fields must be filled');
       return;
     }
-    registerPump({
-      name: pumpName.trim(),
-      address: address.trim(),
-      contact: contact.trim(),
-      loginId: loginId.trim(),
-      password,
-      ownerDisplayName: ownerName.trim() || undefined,
-    });
-    router.replace(href('/(pump)/(home)/companies') as Href);
+    try {
+      await registerPump({
+        name: pumpName.trim(),
+        address: address.trim(),
+        contact: contact.trim(),
+        email: email.trim(),
+        password,
+        ownerDisplayName: ownerName.trim() || undefined,
+      });
+      router.replace(href('/(pump)/(home)/companies') as Href);
+    } catch (e: any) {
+      setErr(e?.message || 'Could not create pump account');
+    }
   };
 
   return (
@@ -92,11 +99,12 @@ export default function RegisterPumpScreen() {
             />
             <View style={styles.divider} />
             <Input
-              label="Login ID"
+              label="Email"
               autoCapitalize="none"
-              placeholder="Choose a unique ID"
-              value={loginId}
-              onChangeText={setLoginId}
+              keyboardType="email-address"
+              placeholder="owner@pump.com"
+              value={email}
+              onChangeText={setEmail}
             />
             <Input
               label="Password"
@@ -105,6 +113,7 @@ export default function RegisterPumpScreen() {
               value={password}
               onChangeText={setPassword}
             />
+            {err ? <Text style={styles.err}>{err}</Text> : null}
             <Button 
               title="Create Pump Account" 
               onPress={onSubmit} 
@@ -165,6 +174,7 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     opacity: 0.5,
   },
+  err: { color: FuelColors.danger, marginBottom: 10, fontSize: 13 },
   submitBtn: { marginTop: 12 },
   backBtn: { marginTop: 10 },
 });

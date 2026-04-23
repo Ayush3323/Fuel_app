@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "509798302872",
+    "project_id": "fuel-8ae21",
+    "storage_bucket": "fuel-8ae21.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:509798302872:android:a21ba37ef42772aedf3ced",
+        "android_client_info": {
+          "package_name": "com.hodorinfo.fuelapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1GqDHH16EgsGu9Y6Fz5vu2zeSijv3_VU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

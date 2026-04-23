@@ -1,15 +1,16 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { FuelColors } from '@/constants/theme';
 
 type Props = {
   label: string;
   value: string;
   sub?: string;
+  style?: StyleProp<ViewStyle>;
 };
 
-export function StatTile({ label, value, sub }: Props) {
+export function StatTile({ label, value, sub, style }: Props) {
   return (
-    <View style={styles.tile}>
+    <View style={[styles.tile, style]}>
       <Text style={styles.label}>{label}</Text>
       <Text style={styles.value}>{value}</Text>
       {sub ? <Text style={styles.sub}>{sub}</Text> : null}

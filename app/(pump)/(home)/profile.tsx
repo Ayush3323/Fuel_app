@@ -71,7 +71,7 @@ export default function PumpProfile() {
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.label}>Login Identity</Text>
-                <Text style={styles.val}>{currentUser?.loginId}</Text>
+                <Text style={styles.val}>{currentUser?.email}</Text>
               </View>
             </View>
           </Card>
@@ -105,8 +105,8 @@ export default function PumpProfile() {
           title="Sign Out"
           variant="outline"
           style={styles.signOutBtn}
-          onPress={() => {
-            logout();
+          onPress={async () => {
+            await logout();
             router.replace(href('/login'));
           }}
         />

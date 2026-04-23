@@ -39,7 +39,7 @@ export default function PumpsTabRequest() {
     if (pumps.length > 0 && !selectedPump) {
       setSelectedPump(pumps[0]);
     }
-  }, [pumps]);
+  }, [pumps, selectedPump]);
 
   // Autocomplete logic for vehicle number
   const vehicleHistory = useMemo(() => {
@@ -98,7 +98,7 @@ export default function PumpsTabRequest() {
         setIsTankFull(false);
         setExtraCash('');
         setNotes('');
-        router.push(href('/companyEmployee/pending'));
+        router.push(href('/companyEmployee/(tabs)/pending'));
       }},
     ]);
   };

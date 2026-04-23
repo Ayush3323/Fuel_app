@@ -4,17 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { FuelColors } from '@/constants/theme';
 import { Button, Card, Header, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
+import { sendPasswordReset } from '@/src/firebase/auth';
 
 export default function EmployeeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { users, transactions } = useApp();
+  const { users } = useApp();
   const user = users.find((u) => u.id === id);
-
-  const userTransactions = transactions.filter((t) => t.filledByUserId === id);
-  const totalVolume = userTransactions.reduce((acc, t) => acc + t.actualQty, 0);
-  const totalValue = userTransactions.reduce((acc, t) => acc + t.gross, 0);
-
   if (!user) {
     return (
       <Screen>
@@ -47,16 +43,8 @@ export default function EmployeeDetail() {
             <View style={styles.infoRow}>
               <Ionicons name="finger-print" size={20} color={FuelColors.primary} />
               <View style={styles.infoText}>
-                <Text style={styles.label}>Login ID</Text>
-                <Text style={styles.val}>{user.loginId}</Text>
-              </View>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.infoRow}>
-              <Ionicons name="key-outline" size={20} color={FuelColors.primary} />
-              <View style={styles.infoText}>
-                <Text style={styles.label}>Login Password</Text>
-                <Text style={styles.val}>{user.password}</Text>
+                <Text style={styles.label}>Email</Text>
+                <Text style={styles.val}>{user.email}</Text>
               </View>
             </View>
             <View style={styles.divider} />
@@ -81,7 +69,10 @@ export default function EmployeeDetail() {
               title="Reset Password"
               variant="outline"
               style={styles.resetBtn}
-              onPress={() => Alert.alert('Request Sent', `A password reset link for ${user.name} has been generated and sent to your contact number.`)}
+              onPress={async () => {
+                await sendPasswordReset(user.email);
+                Alert.alert('Request Sent', `A password reset link was sent to ${user.email}.`);
+              }}
             />
             <Button
               title="Deactivate Account"

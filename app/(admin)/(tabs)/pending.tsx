@@ -14,7 +14,7 @@ import {
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
-export default function EmployeePending() {
+export default function AdminPendingRequests() {
   const { requests, currentUser, pumps, getCompany, getPumpsForCompany } = useApp();
   const companyId = currentUser?.companyId ?? '';
   const company = getCompany(companyId);
@@ -41,7 +41,7 @@ export default function EmployeePending() {
       <Header title="Pending Requests" showBack={false} />
       <View style={styles.topPad} />
       <Text style={styles.sub}>{company?.name}</Text>
-      
+
       <View style={styles.filterSection}>
         <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
       </View>
@@ -64,11 +64,9 @@ export default function EmployeePending() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <EmptyState title="No pending requests" />
-        }
+        ListEmptyComponent={<EmptyState title="No pending requests" />}
         renderItem={({ item }) => {
-          const pump = pumps.find(p => p.id === item.pumpId);
+          const pump = pumps.find((p) => p.id === item.pumpId);
           return (
             <Card style={styles.card}>
               <View style={styles.row}>
@@ -95,13 +93,13 @@ export default function EmployeePending() {
 
 const styles = StyleSheet.create({
   topPad: { height: 12 },
-  sub: { 
-    color: FuelColors.primary, 
-    paddingHorizontal: 16, 
-    marginBottom: 12, 
-    fontWeight: '800', 
+  sub: {
+    color: FuelColors.primary,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    fontWeight: '800',
     fontSize: 14,
-    textTransform: 'uppercase'
+    textTransform: 'uppercase',
   },
   filterSection: { marginBottom: 6 },
   searchSection: { paddingHorizontal: 16, marginBottom: 12 },

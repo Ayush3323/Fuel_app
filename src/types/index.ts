@@ -12,8 +12,7 @@ export interface User {
   id: string;
   role: Role;
   name: string;
-  loginId: string;
-  password: string;
+  email: string;
   pumpId?: string;
   /** Set only for company admin users */
   companyId?: string;

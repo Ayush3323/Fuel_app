@@ -6,6 +6,7 @@ import { useApp } from '@/src/context/AppContext';
 export default function EmployeeProfile() {
   const { currentUser, getCompany, logout } = useApp();
   const company = getCompany(currentUser?.companyId ?? '');
+  const unlinked = currentUser?.role === 'employee' && !currentUser?.companyId;
 
   return (
     <Screen>
@@ -30,7 +31,7 @@ export default function EmployeeProfile() {
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <Text style={styles.label}>Login Username</Text>
-            <Text style={styles.val}>{currentUser?.loginId}</Text>
+            <Text style={styles.val}>{currentUser?.email || '---'}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
@@ -38,12 +39,19 @@ export default function EmployeeProfile() {
             <Text style={styles.val}>{currentUser?.role}</Text>
           </View>
         </Card>
+        {unlinked ? (
+          <Text style={styles.warn}>
+            Your employee account is not linked to a company yet. Ask company owner to add your email in Team.
+          </Text>
+        ) : null}
 
         <View style={styles.btnRow}>
           <Button
             title="Sign Out"
             variant="outline"
-            onPress={logout}
+            onPress={async () => {
+              await logout();
+            }}
           />
         </View>
         
@@ -79,6 +87,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, color: FuelColors.textSecondary, marginBottom: 2, fontWeight: '600' },
   val: { fontSize: 15, fontWeight: '700', color: FuelColors.text },
   divider: { height: 1, backgroundColor: FuelColors.border, marginHorizontal: 12 },
+  warn: { color: FuelColors.warning, marginBottom: 12, fontSize: 12, textAlign: 'center' },
   btnRow: { marginTop: 4 },
   version: { 
     textAlign: 'center', 

@@ -12,8 +12,8 @@ export default function PumpJoinScreen() {
   const [code, setCode] = useState('');
   const pumpId = currentUser?.pumpId ?? '';
 
-  const onJoin = () => {
-    const r = redeemInvite(code, pumpId);
+  const onJoin = async () => {
+    const r = await redeemInvite(code, pumpId);
     if (!r.ok) {
       Alert.alert('Could not join', r.error);
       return;
