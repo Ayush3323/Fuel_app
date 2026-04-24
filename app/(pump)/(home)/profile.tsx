@@ -1,15 +1,46 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
-import { Button, Card, Header, Screen, SectionTitle } from '@/src/components/ui';
+import { Button, Card, Header, Input, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
 export default function PumpProfile() {
   const router = useRouter();
-  const { currentUser, pumps, logout } = useApp();
+  const { currentUser, pumps, logout, updateMyProfile } = useApp();
   const pump = pumps.find((p) => p.id === currentUser?.pumpId);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(currentUser?.name ?? '');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const onSave = async () => {
+    if (!name.trim()) {
+      setErr('Name is required');
+      return;
+    }
+    setErr('');
+    setSaving(true);
+    try {
+      await updateMyProfile({ name: name.trim() });
+      setOpen(false);
+    } catch {
+      setErr('Could not update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Screen style={styles.screen}>
@@ -102,6 +133,17 @@ export default function PumpProfile() {
         </View>
 
         <Button
+          title="Update Profile"
+          variant="secondary"
+          style={styles.updateBtn}
+          onPress={() => {
+            setName(currentUser?.name ?? '');
+            setErr('');
+            setOpen(true);
+          }}
+        />
+
+        <Button
           title="Sign Out"
           variant="outline"
           style={styles.signOutBtn}
@@ -113,6 +155,30 @@ export default function PumpProfile() {
         
         <Text style={styles.version}>Fuel Credit v1.2.0 • Build 150</Text>
       </ScrollView>
+
+      <Modal visible={open} transparent animationType="slide">
+        <View style={styles.modalBg}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+            style={styles.modalKeyboard}
+          >
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Update Profile</Text>
+              <Input label="Display name" value={name} onChangeText={setName} editable={!saving} />
+              {err ? <Text style={styles.err}>{err}</Text> : null}
+              <View style={styles.modalActions}>
+                <View style={styles.modalBtn}>
+                  <Button title="Cancel" variant="secondary" onPress={() => setOpen(false)} disabled={saving} />
+                </View>
+                <View style={styles.modalBtn}>
+                  <Button title="Save" onPress={onSave} loading={saving} disabled={saving} />
+                </View>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -262,6 +328,11 @@ const styles = StyleSheet.create({
   },
   signOutBtn: {
     marginHorizontal: 20,
+    marginTop: 12,
+    borderRadius: 18,
+  },
+  updateBtn: {
+    marginHorizontal: 20,
     marginTop: 32,
     borderRadius: 18,
   },
@@ -272,4 +343,23 @@ const styles = StyleSheet.create({
     color: FuelColors.textMuted,
     fontWeight: '600',
   },
+  modalBg: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+  modalKeyboard: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: FuelColors.surface,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 20,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: FuelColors.text, marginBottom: 10 },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  modalBtn: { flex: 1 },
+  err: { color: FuelColors.danger, marginBottom: 8, fontSize: 13 },
 });

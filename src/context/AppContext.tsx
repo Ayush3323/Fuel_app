@@ -17,6 +17,7 @@ import {
     inviteEmployee,
     registerCompanyInFirestore,
     registerPumpInFirestore,
+    updateUserProfile as fsUpdateUserProfile,
     subscribeBills,
     subscribeCompanies,
     subscribeInvites,
@@ -68,6 +69,7 @@ type AppContextValue = {
   devSwitchUser: (loginId: string) => void;
   registerCompany: (input: RegisterCompanyInput) => Promise<User>;
   registerPump: (input: RegisterPumpInput) => Promise<User>;
+  updateMyProfile: (patch: { name?: string }) => Promise<void>;
   createInvite: (companyId: string) => Promise<PumpInvite>;
   redeemInvite: (
     code: string,
@@ -233,6 +235,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentUser(user);
     return user;
   }, []);
+
+  const updateMyProfile = useCallback(
+    async (patch: { name?: string }) => {
+      if (!currentUser) throw new Error('Not signed in');
+      await fsUpdateUserProfile(currentUser.id, patch);
+      setCurrentUser((prev) => (prev ? { ...prev, ...patch, name: patch.name?.trim() || prev.name } : prev));
+    },
+    [currentUser]
+  );
 
   const createInvite = useCallback(async (companyId: string) => fsCreateInvite(companyId), []);
 
@@ -416,6 +427,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       devSwitchUser,
       registerCompany,
       registerPump,
+      updateMyProfile,
       createInvite,
       redeemInvite,
       createEmployee,
@@ -450,6 +462,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       devSwitchUser,
       registerCompany,
       registerPump,
+      updateMyProfile,
       createInvite,
       redeemInvite,
       createEmployee,

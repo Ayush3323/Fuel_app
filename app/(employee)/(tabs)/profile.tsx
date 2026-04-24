@@ -1,13 +1,35 @@
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FuelColors } from '@/constants/theme';
-import { Button, Card, Screen, Header } from '@/src/components/ui';
+import { Button, Card, Header, Input, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 
 export default function PumpEmployeeProfile() {
-  const { currentUser, pumps, logout } = useApp();
+  const { currentUser, pumps, logout, updateMyProfile } = useApp();
   const pumpId = currentUser?.pumpId ?? '';
   const pump = pumps.find((p) => p.id === pumpId);
   const unlinked = currentUser?.role === 'employee' && !currentUser?.pumpId;
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(currentUser?.name ?? '');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const onSave = async () => {
+    if (!name.trim()) {
+      setErr('Name is required');
+      return;
+    }
+    setErr('');
+    setSaving(true);
+    try {
+      await updateMyProfile({ name: name.trim() });
+      setOpen(false);
+    } catch {
+      setErr('Could not update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Screen>
@@ -48,6 +70,16 @@ export default function PumpEmployeeProfile() {
 
         <View style={styles.btnRow}>
           <Button
+            title="Update Profile"
+            variant="secondary"
+            onPress={() => {
+              setName(currentUser?.name ?? '');
+              setErr('');
+              setOpen(true);
+            }}
+            style={{ marginBottom: 12 }}
+          />
+          <Button
             title="Sign Out"
             variant="outline"
             onPress={async () => {
@@ -58,6 +90,30 @@ export default function PumpEmployeeProfile() {
         
         <Text style={styles.version}>FuelFlow v1.0.0</Text>
       </ScrollView>
+
+      <Modal visible={open} transparent animationType="slide">
+        <View style={styles.modalBg}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+            style={styles.modalKeyboard}
+          >
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Update Profile</Text>
+              <Input label="Display name" value={name} onChangeText={setName} editable={!saving} />
+              {err ? <Text style={styles.err}>{err}</Text> : null}
+              <View style={styles.modalActions}>
+                <View style={styles.modalBtn}>
+                  <Button title="Cancel" variant="secondary" onPress={() => setOpen(false)} disabled={saving} />
+                </View>
+                <View style={styles.modalBtn}>
+                  <Button title="Save" onPress={onSave} loading={saving} disabled={saving} />
+                </View>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -97,4 +153,23 @@ const styles = StyleSheet.create({
     marginTop: 24,
     fontWeight: '500'
   },
+  modalBg: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+  modalKeyboard: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: FuelColors.surface,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 20,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: FuelColors.text, marginBottom: 10 },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  modalBtn: { flex: 1 },
+  err: { color: FuelColors.danger, marginBottom: 8, fontSize: 13 },
 });

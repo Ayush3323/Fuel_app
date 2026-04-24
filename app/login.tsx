@@ -15,6 +15,25 @@ import {
   View,
 } from 'react-native';
 
+function mapAuthError(error: unknown): string {
+  const code = (error as { code?: string })?.code ?? '';
+  switch (code) {
+    case 'auth/invalid-email':
+      return 'Invalid email format';
+    case 'auth/user-not-found':
+      return 'No account found for this email';
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'Incorrect email or password';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Try again in a few minutes.';
+    case 'auth/network-request-failed':
+      return 'Network issue. Check your internet and try again.';
+    default:
+      return 'Unable to sign in right now. Please try again.';
+  }
+}
+
 /* ---------- Route Logic ---------- */
 function routeForRole(user: User): Href {
   if (user.role === 'admin') return href('/(admin)/(tabs)/dashboard');
@@ -48,11 +67,14 @@ export default function LoginScreen() {
     try {
       const user = await login(email.trim(), password);
 
-      if (!user) throw new Error();
+      if (!user) {
+        setError('Account exists but profile is not set up yet. Contact admin/support.');
+        return;
+      }
 
       router.replace(routeForRole(user));
-    } catch {
-      setError('Invalid email or password');
+    } catch (e) {
+      setError(mapAuthError(e));
     } finally {
       setLoading(false);
     }

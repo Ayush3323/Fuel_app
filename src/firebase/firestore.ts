@@ -257,6 +257,15 @@ export async function getUserDoc(uid: string): Promise<User | null> {
   return asDoc<User>(snap.id, snap.data()!);
 }
 
+export async function updateUserProfile(uid: string, patch: { name?: string }) {
+  const safePatch: Record<string, unknown> = {};
+  if (typeof patch.name === 'string' && patch.name.trim().length > 0) {
+    safePatch.name = patch.name.trim();
+  }
+  if (!Object.keys(safePatch).length) return;
+  await usersRef().doc(uid).update(safePatch);
+}
+
 export async function registerCompanyInFirestore(input: {
   uid: string;
   email: string;
