@@ -55,7 +55,7 @@ export default function RegisterPumpScreen() {
         password,
         ownerDisplayName: ownerName.trim() || undefined,
       });
-      router.replace(href('/(pump)/(home)/companies') as Href);
+      router.replace(href('/(pump)/(home)/dashboard') as Href);
     } catch (e: any) {
       setError(e?.message || 'Failed to create account');
     } finally {

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
 import { BillView, Button, Header, Input, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
+import { appAlert } from '@/src/utils/appAlert';
 import { billTotalForItems } from '@/src/utils/billMath';
 
 export default function AdminBillDetail() {
@@ -37,12 +37,12 @@ export default function AdminBillDetail() {
 
   const onPaid = () => {
     if (!refNo.trim()) {
-      Alert.alert('Reference required', 'Enter payment reference / UTR');
+      appAlert('Reference required', 'Enter payment reference / UTR');
       return;
     }
     markBillPaid(bill.id, refNo.trim(), proof || undefined);
     setModal(false);
-    Alert.alert('Marked paid', 'Pump will see this under paid bills.', [
+    appAlert('Marked paid', 'Pump will see this under paid bills.', [
       { text: 'OK', onPress: () => router.back() },
     ]);
   };

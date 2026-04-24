@@ -44,6 +44,24 @@ export default function EmployeePending() {
       <Header title="Incoming Queue" showBack={false} />
       <View style={styles.topPad} />
       <Text style={styles.sub}>{pump?.name}</Text>
+
+      <View style={styles.priceWrap}>
+        <Text style={styles.priceTitle}>Today's Fuel Price</Text>
+        <View style={styles.priceRow}>
+          <View style={styles.pricePill}>
+            <Text style={styles.priceKey}>HSD</Text>
+            <Text style={styles.priceVal}>
+              {pump?.hsdRate != null ? `₹${pump.hsdRate}` : '-'}
+            </Text>
+          </View>
+          <View style={styles.pricePill}>
+            <Text style={styles.priceKey}>MS</Text>
+            <Text style={styles.priceVal}>
+              {pump?.msRate != null ? `₹${pump.msRate}` : '-'}
+            </Text>
+          </View>
+        </View>
+      </View>
       
       <View style={styles.filterSection}>
         <CompanyFilterBar companies={linked} selectedId={filter} onChange={setFilter} />
@@ -110,6 +128,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textTransform: 'uppercase'
   },
+  priceWrap: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: FuelColors.border,
+    backgroundColor: FuelColors.surface,
+  },
+  priceTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: FuelColors.textSecondary,
+    marginBottom: 8,
+  },
+  priceRow: { flexDirection: 'row', gap: 10 },
+  pricePill: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: FuelColors.border,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: FuelColors.background,
+  },
+  priceKey: { fontSize: 12, fontWeight: '800', color: FuelColors.textSecondary },
+  priceVal: { fontSize: 15, fontWeight: '900', color: FuelColors.text, marginTop: 2 },
   filterSection: { marginBottom: 6 },
   searchSection: { paddingHorizontal: 16, marginBottom: 12 },
   headingWrap: { paddingHorizontal: 16 },

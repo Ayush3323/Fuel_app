@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "temp",
+    "name": "Fuel Credit",
     "slug": "temp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "temp",
+    "scheme": "fuelcredit",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -43,12 +43,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/icon.png",
+          "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#4F46E5",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#312E81"
           }
         }
       ]

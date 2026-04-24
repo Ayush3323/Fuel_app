@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useGlobalSearchParams, useLocalSearchParams, useRouter } from 'expo-router';
-import { href } from '@/src/utils/routerHref';
-import { Ionicons } from '@expo/vector-icons';
 import { FuelColors } from '@/constants/theme';
 import { Badge, Button, Card, Header, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import { billTotalForItems } from '@/src/utils/billMath';
+import { href } from '@/src/utils/routerHref';
+import { Ionicons } from '@expo/vector-icons';
+import { useGlobalSearchParams, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 type BillingTab = 'unbilled' | 'raised' | 'paid';
 
@@ -73,6 +73,16 @@ export default function PumpCompanyBillingIndex() {
     () => companyFills.filter((t) => !!t.billId),
     [companyFills]
   );
+  const raisedCount = useMemo(
+    () =>
+      bills.filter(
+        (b) =>
+          b.pumpId === pumpId &&
+          b.companyId === companyId &&
+          b.status === 'raised'
+      ).length,
+    [bills, pumpId, companyId]
+  );
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -97,32 +107,39 @@ export default function PumpCompanyBillingIndex() {
       <Header 
         title="Billing" 
         subtitle={`${company?.name ?? ''} · ${pump?.name ?? ''}`}
-        right={
-          <Button
-            title="Raise"
-            onPress={() => {
-              const ids = Array.from(selected).join(',');
-              router.push(href(`/(pump)/${companyId}/billing/new?itemIds=${ids}`));
-            }}
-            style={styles.headerBtn}
-          />
-        }
+        // right={
+        //   <Button
+        //     title="Raise"
+        //     onPress={() => {
+        //       const ids = Array.from(selected).join(',');
+        //       router.push(href(`/(pump)/${companyId}/billing/new?itemIds=${ids}`));
+        //     }}
+        //     style={styles.headerBtn}
+        //   />
+        // }
       />
 
       <View style={styles.tabs}>
         {(
           [
-            { key: 'unbilled' as const, label: 'Unbilled' },
-            { key: 'raised' as const, label: 'Raised' },
+            { key: 'unbilled' as const, label: 'Unbilled', count: selectableFills.length },
+            { key: 'raised' as const, label: 'Raised', count: raisedCount },
             { key: 'paid' as const, label: 'Paid' },
           ] as const
-        ).map(({ key, label }) => (
+        ).map((tabItem) => (
           <Pressable
-            key={key}
-            onPress={() => setTab(key)}
-            style={[styles.tab, tab === key && styles.tabOn]}
+            key={tabItem.key}
+            onPress={() => setTab(tabItem.key)}
+            style={[styles.tab, tab === tabItem.key && styles.tabOn]}
           >
-            <Text style={[styles.tabTxt, tab === key && styles.tabTxtOn]}>{label}</Text>
+            <View style={styles.tabInner}>
+              <Text style={[styles.tabTxt, tab === tabItem.key && styles.tabTxtOn]}>{tabItem.label}</Text>
+              {'count' in tabItem ? (
+                <Text style={[styles.tabCount, tab === tabItem.key && styles.tabCountOn]}>
+                  {tabItem.count}
+                </Text>
+              ) : null}
+            </View>
           </Pressable>
         ))}
       </View>
@@ -240,8 +257,11 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
   tabOn: { backgroundColor: FuelColors.primary, shadowColor: FuelColors.primary, shadowOpacity: 0.2, shadowRadius: 8, elevation: 3 },
+  tabInner: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   tabTxt: { fontSize: 13, fontWeight: '700', color: FuelColors.textSecondary },
   tabTxtOn: { color: '#fff' },
+  tabCount: { fontSize: 11, fontWeight: '700', color: FuelColors.textMuted },
+  tabCountOn: { color: 'rgba(255,255,255,0.9)' },
   section: { paddingHorizontal: 20, marginTop: 16 },
   list: { padding: 20, paddingBottom: 100 },
   card: { marginBottom: 12, borderRadius: 20, borderWidth: 1, borderColor: FuelColors.border },

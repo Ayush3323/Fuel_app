@@ -50,6 +50,7 @@ function PumpRow({
 }
 
 export default function PumpsList() {
+  const router = useRouter();
   const { currentUser, getPumpsForCompany } = useApp();
   const companyId = currentUser?.companyId ?? '';
   const pumps = getPumpsForCompany(companyId);
@@ -64,10 +65,21 @@ export default function PumpsList() {
 
   return (
     <Screen>
-      <Header title="Linked Pumps" showBack={false} />
+      <Header
+        title="Linked Pumps"
+        showBack={false}
+        right={
+          <Pressable
+            onPress={() => router.push(href('/(admin)/(tabs)/invites'))}
+            style={styles.addBtn}
+          >
+            <Ionicons name="add" size={22} color="#fff" />
+          </Pressable>
+        }
+      />
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <Text style={styles.note}>
-          Manage linked pumps and outstanding credit. Invite new pumps from More -> Invites.
+          Manage linked pumps and outstanding credit. Use + to invite a new pump.
         </Text>
         
         <View style={styles.headingWrap}>
@@ -108,6 +120,14 @@ const styles = StyleSheet.create({
     fontWeight: '500'
   },
   headingWrap: { marginBottom: 6 },
+  addBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: FuelColors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   list: { },
   card: { marginBottom: 12, padding: 14 },
   cardContent: { flexDirection: 'row', alignItems: 'center' },

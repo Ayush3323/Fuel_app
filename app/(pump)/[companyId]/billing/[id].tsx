@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
+import { href } from '@/src/utils/routerHref';
 import {
   BillView,
   Button,
@@ -14,6 +15,7 @@ import {
   Select,
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
+import { appAlert } from '@/src/utils/appAlert';
 import type { FuelDiscount } from '@/src/types';
 import { billTotalForItems } from '@/src/utils/billMath';
 
@@ -26,20 +28,13 @@ export default function PumpBillDetail() {
     getCompany,
     updateBill,
     assignTransactionsToBill,
-    getUnbilledTransactions,
+    deleteBill,
   } = useApp();
+  const router = useRouter();
   const bill = bills.find((b) => b.id === id);
   const pump = pumps.find((p) => p.id === bill?.pumpId);
   const company = bill ? getCompany(bill.companyId) : undefined;
   const editable = bill ? bill.status !== 'paid' : false;
-
-  const unbilled = useMemo(
-    () =>
-      bill
-        ? getUnbilledTransactions(bill.pumpId, bill.companyId)
-        : ([] as ReturnType<typeof getUnbilledTransactions>),
-    [getUnbilledTransactions, bill]
-  );
 
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -94,22 +89,10 @@ export default function PumpBillDetail() {
     ? billTotalForItems(previewBill, transactions).totalDue
     : 0;
 
-  const removeLine = (txnId: string) => {
-    setSelected((prev) => {
-      const n = new Set(prev);
-      n.delete(txnId);
-      return n;
-    });
-  };
-
-  const addUnbilled = (txnId: string) => {
-    setSelected((prev) => new Set([...prev, txnId]));
-  };
-
   const saveChanges = () => {
     if (!bill || !pump || !company) return;
     if (selected.size === 0) {
-      Alert.alert('Line items', 'Keep at least one transaction on the bill');
+      appAlert('Line items', 'Keep at least one transaction on the bill');
       return;
     }
     updateBill(bill.id, {
@@ -119,7 +102,39 @@ export default function PumpBillDetail() {
       previousBalance: parseFloat(prevBal) || 0,
     });
     assignTransactionsToBill(bill.id, [...selected]);
-    Alert.alert('Saved', 'Bill updated.');
+    appAlert('Saved', 'Bill updated.');
+  };
+
+  const onDeleteRaisedBill = () => {
+    if (!bill || bill.status !== 'raised') return;
+    appAlert(
+      'Delete raised bill?',
+      'This will remove the raised bill and move all its transactions back to Unbilled.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteBill(bill.id);
+              appAlert('Deleted', 'Bill deleted and transactions moved to Unbilled.', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    router.replace(
+                      href(`/(pump)/${bill.companyId}/billing?tab=unbilled`)
+                    );
+                  },
+                },
+              ]);
+            } catch {
+              appAlert('Delete failed', 'Could not delete this bill right now. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (!bill || !pump || !company) {
@@ -130,9 +145,6 @@ export default function PumpBillDetail() {
       </Screen>
     );
   }
-
-  const inBillTx = transactions.filter((t) => selected.has(t.id));
-  const addable = unbilled.filter((t) => !selected.has(t.id));
 
   return (
     <Screen style={styles.screen}>
@@ -156,55 +168,6 @@ export default function PumpBillDetail() {
 
         {editable ? (
           <>
-            <SectionTitle title="Line Items" style={styles.section} />
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false} 
-              style={styles.tScroll}
-              contentContainerStyle={styles.tScrollContent}
-            >
-              {inBillTx.map((t) => (
-                <Pressable key={t.id} onPress={() => removeLine(t.id)}>
-                  <Card style={[styles.tCard, styles.tCardOn]}>
-                    <View style={styles.tCardHeader}>
-                      <Ionicons name="remove-circle" size={22} color={FuelColors.danger} />
-                      <Text style={styles.tCardNo}>{t.vehicleNo}</Text>
-                    </View>
-                    <Text style={styles.tCardAmt}>₹{t.gross.toLocaleString('en-IN')}</Text>
-                    <Text style={styles.tCardMeta}>{t.fuel} · {t.actualQty}L</Text>
-                  </Card>
-                </Pressable>
-              ))}
-              {inBillTx.length === 0 ? (
-                <Text style={styles.empty}>No transactions selected</Text>
-              ) : null}
-            </ScrollView>
-
-            {addable.length > 0 && (
-              <>
-                <SectionTitle title="Available Transactions" style={styles.section} />
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false} 
-                  style={styles.tScroll}
-                  contentContainerStyle={styles.tScrollContent}
-                >
-                  {addable.map((t) => (
-                    <Pressable key={t.id} onPress={() => addUnbilled(t.id)}>
-                      <Card style={styles.tCard}>
-                        <View style={styles.tCardHeader}>
-                          <Ionicons name="add-circle" size={22} color={FuelColors.success} />
-                          <Text style={styles.tCardNo}>{t.vehicleNo}</Text>
-                        </View>
-                        <Text style={styles.tCardAmt}>₹{t.gross.toLocaleString('en-IN')}</Text>
-                        <Text style={styles.tCardMeta}>{t.fuel} · {t.actualQty}L</Text>
-                      </Card>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </>
-            )}
-
             <SectionTitle title="Configuration" style={styles.section} />
             <Card style={styles.configCard}>
               <View style={styles.configGrid}>
@@ -281,6 +244,14 @@ export default function PumpBillDetail() {
             </View>
 
             <View style={styles.actions}>
+              {bill.status === 'raised' ? (
+                <Button
+                  title="Delete Raised Bill"
+                  variant="danger"
+                  onPress={onDeleteRaisedBill}
+                  style={styles.deleteBtn}
+                />
+              ) : null}
               <Button title={`Save Changes • ₹${due.toLocaleString('en-IN')}`} onPress={saveChanges} style={styles.actionBtn} />
             </View>
           </>
@@ -319,14 +290,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   section: { paddingHorizontal: 20, marginTop: 16, marginBottom: 4 },
-  tScroll: { marginVertical: 8 },
-  tScrollContent: { paddingHorizontal: 20, gap: 12 },
-  tCard: { width: 170, padding: 16, borderRadius: 24, backgroundColor: '#fff', borderWidth: 1, borderColor: FuelColors.border },
-  tCardOn: { borderColor: FuelColors.danger + '40', backgroundColor: FuelColors.danger + '05' },
-  tCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  tCardNo: { fontSize: 14, fontWeight: '800', color: FuelColors.text },
-  tCardAmt: { fontSize: 18, fontWeight: '900', color: FuelColors.text },
-  tCardMeta: { fontSize: 12, color: FuelColors.textSecondary, marginTop: 4, fontWeight: '600' },
   configCard: { marginHorizontal: 20, padding: 20, borderRadius: 24 },
   configGrid: { flexDirection: 'row', marginBottom: 4 },
   discountRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 20 },
@@ -335,6 +298,7 @@ const styles = StyleSheet.create({
   previewContainer: { paddingHorizontal: 12 },
   billPreviewCard: { marginHorizontal: 8, padding: 0, borderRadius: 28, marginTop: 8, borderColor: 'transparent', elevation: 4 },
   actions: { padding: 20, marginTop: 16 },
+  deleteBtn: { height: 52, borderRadius: 14, marginBottom: 10 },
   actionBtn: { height: 64, borderRadius: 20, shadowColor: FuelColors.primary, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
   empty: { color: FuelColors.textMuted, paddingHorizontal: 20, marginVertical: 32, fontStyle: 'italic', textAlign: 'center' },
   miss: { padding: 20, textAlign: 'center', color: FuelColors.textSecondary },

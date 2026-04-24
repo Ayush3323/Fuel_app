@@ -8,7 +8,7 @@ import type { User } from '@/src/types';
 
 function routeForRole(user: User) {
   if (user.role === 'admin') return href('/(admin)/(tabs)/dashboard');
-  if (user.role === 'pumpOwner') return href('/(pump)/(home)/companies');
+  if (user.role === 'pumpOwner') return href('/(pump)/(home)/dashboard');
   if (user.role === 'employee' && user.companyId) return href('/companyEmployee/(tabs)/pending');
   return href('/(employee)/(tabs)/pending');
 }

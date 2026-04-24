@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useGlobalSearchParams, useLocalSearchParams, useRouter } from 'expo-router';
 import { href } from '@/src/utils/routerHref';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FuelColors } from '@/constants/theme';
 import {
@@ -15,6 +15,7 @@ import {
   Select,
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
+import { appAlert } from '@/src/utils/appAlert';
 import type { FuelDiscount } from '@/src/types';
 import { billTotalForItems } from '@/src/utils/billMath';
 
@@ -115,7 +116,7 @@ export default function NewBillScreen() {
   const raise = () => {
     if (!company) return;
     if (selected.size === 0) {
-      Alert.alert('Select items', 'Pick at least one transaction');
+      appAlert('Select items', 'Pick at least one transaction');
       return;
     }
     createBill({
@@ -128,7 +129,7 @@ export default function NewBillScreen() {
       previousBalance: parseFloat(prevBal) || 0,
       status: 'raised',
     });
-    Alert.alert('Bill raised', 'Company will see it under Bills.', [
+    appAlert('Bill raised', 'Company will see it under Bills.', [
       {
         text: 'OK',
         onPress: () => router.replace(href(`/(pump)/${companyId}/billing?tab=raised`)),

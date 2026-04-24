@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FuelColors } from '@/constants/theme';
 import { Button, Header, Input, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
+import { appAlert } from '@/src/utils/appAlert';
 import { href } from '@/src/utils/routerHref';
 
 export default function PumpJoinScreen() {
@@ -15,13 +16,13 @@ export default function PumpJoinScreen() {
   const onJoin = async () => {
     const r = await redeemInvite(code, pumpId);
     if (!r.ok) {
-      Alert.alert('Could not join', r.error);
+      appAlert('Could not join', r.error);
       return;
     }
-    Alert.alert('Connected', `You are now linked to ${r.company.name}.`, [
+    appAlert('Connected', `You are now linked to ${r.company.name}.`, [
       {
         text: 'OK',
-        onPress: () => router.replace(href('/(pump)/(home)/companies')),
+        onPress: () => router.replace(href('/(pump)/(home)/dashboard')),
       },
     ]);
   };

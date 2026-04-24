@@ -52,6 +52,8 @@ export interface Pump {
   contact: string;
   ownerUserId: string;
   gstin?: string;
+  hsdRate?: number | null;
+  msRate?: number | null;
 }
 
 export interface FuelRequest {

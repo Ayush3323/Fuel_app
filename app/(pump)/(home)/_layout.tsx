@@ -16,32 +16,34 @@ export default function PumpHomeStack() {
       }}
     >
       <Tabs.Screen
-        name="companies"
+        name="dashboard"
         options={{
-          title: 'Companies',
+          title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="business-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="pending"
+        name="companies"
         options={{
-          title: 'Pending',
+          title: 'Companies',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="layers-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="requests"
+        options={{
+          title: 'Requests',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="flash-outline" size={size} color={color} />
           ),
         }}
       />
-      <Tabs.Screen
-        name="completed"
-        options={{
-          title: 'Completed',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="checkmark-done-outline" size={size} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="pending" options={{ href: null }} />
+      <Tabs.Screen name="completed" options={{ href: null }} />
       <Tabs.Screen
         name="team"
         options={{

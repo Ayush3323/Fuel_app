@@ -1,10 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, Text, View, ScrollView, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FuelColors } from '@/constants/theme';
 import { Button, Card, Header, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import { sendPasswordReset } from '@/src/firebase/auth';
+import { appAlert } from '@/src/utils/appAlert';
 
 export default function EmployeeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -71,14 +72,14 @@ export default function EmployeeDetail() {
               style={styles.resetBtn}
               onPress={async () => {
                 await sendPasswordReset(user.email);
-                Alert.alert('Request Sent', `A password reset link was sent to ${user.email}.`);
+                appAlert('Request Sent', `A password reset link was sent to ${user.email}.`);
               }}
             />
             <Button
               title="Deactivate Account"
               variant="danger"
               style={styles.deactivateBtn}
-              onPress={() => Alert.alert(
+              onPress={() => appAlert(
                 'Deactivate Employee?',
                 'This will prevent the employee from logging in. You can reactivate them later.',
                 [
@@ -87,7 +88,7 @@ export default function EmployeeDetail() {
                     text: 'Deactivate', 
                     style: 'destructive',
                     onPress: () => {
-                      Alert.alert('Deactivated', `${user.name} has been successfully deactivated.`);
+                      appAlert('Deactivated', `${user.name} has been successfully deactivated.`);
                       router.back();
                     }
                   }

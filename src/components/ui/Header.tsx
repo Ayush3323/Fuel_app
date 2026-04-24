@@ -1,8 +1,8 @@
+import { FuelColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { FuelColors } from '@/constants/theme';
 
 type Props = {
   title: string;
@@ -45,10 +45,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingVertical: 15,
+    minHeight: 62,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: FuelColors.border,
-    backgroundColor: FuelColors.surface,
+    backgroundColor: '#F8FAFC',
   },
   back: { width: 40, justifyContent: 'center' },
   titleBlock: { flex: 1, alignItems: 'flex-start' },
@@ -56,7 +57,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '900',
     color: FuelColors.text,
-    letterSpacing: -0.5,
     marginBottom: 2,
   },
   sub: {

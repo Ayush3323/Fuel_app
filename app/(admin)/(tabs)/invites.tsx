@@ -1,10 +1,12 @@
 import { FuelColors } from '@/constants/theme';
 import { Badge, Button, Card, Header, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
+import { appAlert } from '@/src/utils/appAlert';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const THRESHOLD = 12;
+const INVITE_TTL_MS = 5 * 60 * 1000;
 
 export default function AdminInvitesScreen() {
   const { invites, pumps, currentUser, createInvite } = useApp();
@@ -34,14 +36,14 @@ export default function AdminInvitesScreen() {
     try {
       const inv = await createInvite(companyId);
       setLastCode(inv.code);
-      Alert.alert(
+      appAlert(
         'Invite Code Generated',
         `Share code ${inv.code} with the petrol pump operator. It expires in 5 minutes.`,
         [{ text: 'OK' }]
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to generate invite code.';
-      Alert.alert('Invite limit reached', message);
+      appAlert('Invite limit reached', message);
     }
   };
 
@@ -70,7 +72,11 @@ export default function AdminInvitesScreen() {
         <View style={styles.list}>
           {visibleList.map((inv) => {
             const redeemed = !!inv.redeemedByPumpId;
-            const isExpired = !redeemed && !!inv.expiresAt && new Date(inv.expiresAt).getTime() <= Date.now();
+            const expiresAtMs =
+              typeof inv.expiresAt === 'string'
+                ? new Date(inv.expiresAt).getTime()
+                : new Date(inv.createdAt).getTime() + INVITE_TTL_MS;
+            const isExpired = !redeemed && Number.isFinite(expiresAtMs) && expiresAtMs <= Date.now();
             const pumpName = inv.redeemedByPumpId
               ? pumps.find((p) => p.id === inv.redeemedByPumpId)?.name ?? inv.redeemedByPumpId
               : null;
@@ -78,7 +84,10 @@ export default function AdminInvitesScreen() {
               <Card key={inv.id} style={styles.card}>
                 <View style={styles.cardRow}>
                   <Text style={styles.codeSm}>{inv.code}</Text>
-                  <Badge status={redeemed ? 'paid' : isExpired ? 'expired' : 'pending'} />
+                  <Badge
+                    status={redeemed ? 'paid' : isExpired ? 'expired' : 'pending'}
+                    label={redeemed ? 'Redeemed' : isExpired ? 'Expired' : 'Pending'}
+                  />
                 </View>
                 <Text style={styles.meta}>
                   Generated on {new Date(inv.createdAt).toLocaleDateString()}

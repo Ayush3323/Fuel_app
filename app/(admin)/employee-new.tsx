@@ -1,10 +1,11 @@
 import { FuelColors } from '@/constants/theme';
 import { Button, Card, Header, Input, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
+import { appAlert } from '@/src/utils/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function NewCompanyEmployeeScreen() {
   const router = useRouter();
@@ -15,11 +16,11 @@ export default function NewCompanyEmployeeScreen() {
 
   const onCreate = async () => {
     if (!name.trim() || !email.trim()) {
-      Alert.alert('Name and email required');
+      appAlert('Name and email required');
       return;
     }
     await createCompanyEmployee(companyId, name.trim(), email.trim());
-    Alert.alert('Invite sent', `${email.trim()} can now complete signup from the login screen.`, [
+    appAlert('Invite sent', `${email.trim()} can now complete signup from the login screen.`, [
       { text: 'OK', onPress: () => router.back() },
     ]);
   };

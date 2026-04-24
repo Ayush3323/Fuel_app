@@ -6,7 +6,7 @@ export default function AdminStack() {
   const { currentUser } = useApp();
   if (!currentUser) return <Redirect href={href('/login')} />;
   if (currentUser.role === 'pumpOwner')
-    return <Redirect href={href('/(pump)/(home)/companies')} />;
+    return <Redirect href={href('/(pump)/(home)/dashboard')} />;
   if (currentUser.role === 'employee' && currentUser.companyId)
     return <Redirect href={href('/companyEmployee/(tabs)/pending')} />;
   if (currentUser.role === 'employee')

@@ -12,12 +12,13 @@ import {
     raiseBill as fsRaiseBill,
     redeemInvite as fsRedeemInvite,
     updateBill as fsUpdateBill,
+    updatePumpFuelRates as fsUpdatePumpFuelRates,
+    updateUserProfile as fsUpdateUserProfile,
     getUserDoc,
     inviteCompanyEmployee,
     inviteEmployee,
     registerCompanyInFirestore,
     registerPumpInFirestore,
-    updateUserProfile as fsUpdateUserProfile,
     subscribeBills,
     subscribeCompanies,
     subscribeInvites,
@@ -70,6 +71,7 @@ type AppContextValue = {
   registerCompany: (input: RegisterCompanyInput) => Promise<User>;
   registerPump: (input: RegisterPumpInput) => Promise<User>;
   updateMyProfile: (patch: { name?: string }) => Promise<void>;
+  updateMyPumpRates: (patch: { hsdRate?: number | null; msRate?: number | null }) => Promise<void>;
   createInvite: (companyId: string) => Promise<PumpInvite>;
   redeemInvite: (
     code: string,
@@ -243,6 +245,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCurrentUser((prev) => (prev ? { ...prev, ...patch, name: patch.name?.trim() || prev.name } : prev));
     },
     [currentUser]
+  );
+
+  const updateMyPumpRates = useCallback(
+    async (patch: { hsdRate?: number | null; msRate?: number | null }) => {
+      if (!currentUser?.pumpId) throw new Error('Pump not found for current user');
+      await fsUpdatePumpFuelRates(currentUser.pumpId, patch);
+      setPumps((prev) =>
+        prev.map((p) =>
+          p.id === currentUser.pumpId
+            ? {
+                ...p,
+                ...(Object.prototype.hasOwnProperty.call(patch, 'hsdRate')
+                  ? { hsdRate: patch.hsdRate ?? null }
+                  : {}),
+                ...(Object.prototype.hasOwnProperty.call(patch, 'msRate')
+                  ? { msRate: patch.msRate ?? null }
+                  : {}),
+              }
+            : p
+        )
+      );
+    },
+    [currentUser?.pumpId]
   );
 
   const createInvite = useCallback(async (companyId: string) => fsCreateInvite(companyId), []);
@@ -428,6 +453,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       registerCompany,
       registerPump,
       updateMyProfile,
+      updateMyPumpRates,
       createInvite,
       redeemInvite,
       createEmployee,
@@ -463,6 +489,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       registerCompany,
       registerPump,
       updateMyProfile,
+      updateMyPumpRates,
       createInvite,
       redeemInvite,
       createEmployee,

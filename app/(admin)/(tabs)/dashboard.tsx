@@ -1,11 +1,12 @@
 import { FuelColors } from '@/constants/theme';
 import { Button, Card, Header, Screen, SectionTitle, StatTile } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
-import { href } from '@/src/utils/routerHref';
+import { appAlert } from '@/src/utils/appAlert';
 import { billTotalForItems } from '@/src/utils/billMath';
-import { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { href } from '@/src/utils/routerHref';
 import { useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -79,7 +80,7 @@ export default function AdminDashboard() {
             title="Create Fuel Request"
             onPress={() => {
               if (linkedPumps.length === 0) {
-                Alert.alert('No linked pump', 'Link a pump first from the Pumps tab.');
+                appAlert('No linked pump', 'Link a pump first from the Pumps tab.');
                 return;
               }
               if (linkedPumps.length === 1) {

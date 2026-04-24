@@ -1,5 +1,5 @@
 import { FuelColors } from '@/constants/theme';
-import { CompanyCard, EmptyState, Header, Input, Screen, SectionTitle } from '@/src/components/ui';
+import { Card, CompanyCard, EmptyState, Header, Input, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import { billTotalForItems } from '@/src/utils/billMath';
 import { href } from '@/src/utils/routerHref';
@@ -7,7 +7,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-const PAGE_SIZE = 10;
 type FilterKey = 'all' | 'has_pending' | 'no_pending' | 'high_outstanding';
 
 type CompanyDirectoryItem = {
@@ -39,7 +38,6 @@ export default function PumpCompaniesHome() {
   const companies = getCompaniesForPump(pumpId);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<FilterKey>('all');
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [hsdRate, setHsdRate] = useState(pump?.hsdRate != null ? String(pump.hsdRate) : '');
   const [msRate, setMsRate] = useState(pump?.msRate != null ? String(pump.msRate) : '');
   const [savingRates, setSavingRates] = useState(false);
@@ -102,7 +100,7 @@ export default function PumpCompaniesHome() {
       }
     });
   }, [directoryRows, query, filter]);
-  const visibleRows = useMemo(() => filteredRows.slice(0, visibleCount), [filteredRows, visibleCount]);
+  const previewRows = useMemo(() => filteredRows.slice(0, 2), [filteredRows]);
 
   const summary = useMemo(() => {
     return {
@@ -112,9 +110,6 @@ export default function PumpCompaniesHome() {
     };
   }, [directoryRows]);
 
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [query, filter, directoryRows.length]);
   useEffect(() => {
     setHsdRate(pump?.hsdRate != null ? String(pump.hsdRate) : '');
     setMsRate(pump?.msRate != null ? String(pump.msRate) : '');
@@ -160,6 +155,113 @@ export default function PumpCompaniesHome() {
       />
 
       <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+        <View style={styles.section}>
+          <SectionTitle title="Today's Fuel Prices" />
+          <Card style={styles.pricingCard}>
+            {!editingRates ? (
+              <View style={styles.priceGrid}>
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceKey}>HSD</Text>
+                  <Text style={styles.priceVal}>
+                    {hsdRate.trim() ? `₹${parseFloat(hsdRate).toLocaleString('en-IN')}` : '-'}
+                  </Text>
+                </View>
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceKey}>MS</Text>
+                  <Text style={styles.priceVal}>
+                    {msRate.trim() ? `₹${parseFloat(msRate).toLocaleString('en-IN')}` : '-'}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <>
+                <Input
+                  label="HSD"
+                  keyboardType="decimal-pad"
+                  value={hsdRate}
+                  onChangeText={setHsdRate}
+                  placeholder="Enter HSD rate"
+                  editable={!savingRates}
+                />
+                <Input
+                  label="MS"
+                  keyboardType="decimal-pad"
+                  value={msRate}
+                  onChangeText={setMsRate}
+                  placeholder="Enter MS rate"
+                  editable={!savingRates}
+                />
+              </>
+            )}
+            {rateErr ? <Text style={styles.rateErr}>{rateErr}</Text> : null}
+            {rateInfo ? <Text style={styles.rateInfo}>{rateInfo}</Text> : null}
+            <View style={styles.rateActionRow}>
+              {editingRates ? (
+                <>
+                  <Pressable
+                    style={styles.rateActionGhost}
+                    onPress={() => {
+                      setEditingRates(false);
+                      setRateErr('');
+                      setRateInfo('');
+                      setHsdRate(pump?.hsdRate != null ? String(pump.hsdRate) : '');
+                      setMsRate(pump?.msRate != null ? String(pump.msRate) : '');
+                    }}
+                    disabled={savingRates}
+                  >
+                    <Text style={styles.rateActionGhostTxt}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.rateActionPrimary}
+                    onPress={async () => {
+                      const ok = await onSaveRates();
+                      if (ok) setEditingRates(false);
+                    }}
+                    disabled={savingRates}
+                  >
+                    <Text style={styles.rateActionPrimaryTxt}>{savingRates ? 'Saving...' : 'Save'}</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <Pressable
+                  style={styles.rateActionPrimary}
+                  onPress={() => {
+                    setRateErr('');
+                    setRateInfo('');
+                    setEditingRates(true);
+                  }}
+                >
+                  <Text style={styles.rateActionPrimaryTxt}>Update</Text>
+                </Pressable>
+              )}
+            </View>
+          </Card>
+        </View>
+
+        <View style={styles.section}>
+          <SectionTitle title="Portfolio Snapshot" />
+          <View style={styles.summaryRow}>
+            <Card style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Connected</Text>
+              <Text style={styles.summaryValue}>{summary.linkedCompanies}</Text>
+            </Card>
+            <Card style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Pending</Text>
+              <Text style={styles.summaryValue}>{summary.pendingTotal}</Text>
+            </Card>
+            <Card style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Outstanding</Text>
+              <Text style={styles.summaryValue}>₹{summary.outstandingTotal.toLocaleString('en-IN')}</Text>
+            </Card>
+          </View>
+        </View>
+
+        <View style={styles.previewHeader}>
+          <SectionTitle title="Connected Companies" style={styles.section} />
+          <Pressable onPress={() => router.push(href('/(pump)/(home)/companies'))}>
+            <Text style={styles.viewAllText}>View All</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.searchSection}>
           <Input
@@ -187,8 +289,6 @@ export default function PumpCompaniesHome() {
           ))}
         </View>
 
-        <SectionTitle title="Connected Companies" style={styles.section} />
-
         {directoryRows.length === 0 ? (
           <View style={styles.emptyWrap}>
             <EmptyState
@@ -203,14 +303,9 @@ export default function PumpCompaniesHome() {
           />
         ) : (
           <View style={styles.list}>
-            {visibleRows.map((item) => (
+            {previewRows.map((item) => (
               <CompanyRow key={item.id} item={item} />
             ))}
-            {visibleCount < filteredRows.length ? (
-              <Pressable style={styles.loadMoreBtn} onPress={() => setVisibleCount((v) => v + PAGE_SIZE)}>
-                <Text style={styles.loadMoreTxt}>Load More</Text>
-              </Pressable>
-            ) : null}
           </View>
         )}
       </ScrollView>
@@ -258,6 +353,14 @@ const styles = StyleSheet.create({
   summaryCard: { flex: 1, padding: 10 },
   summaryLabel: { color: FuelColors.textSecondary, fontSize: 11, fontWeight: '700' },
   summaryValue: { color: FuelColors.text, fontSize: 15, fontWeight: '800', marginTop: 4 },
+  previewHeader: {
+    marginTop: 8,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  viewAllText: { color: FuelColors.primary, fontWeight: '800', fontSize: 13 },
   searchSection: { paddingHorizontal: 16, marginTop: 8, marginBottom: 8 },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 2 },
   scrollBody: { paddingBottom: 24 },
@@ -277,16 +380,6 @@ const styles = StyleSheet.create({
   chipTxtOn: { color: FuelColors.primary },
   list: { paddingHorizontal: 16, paddingBottom: 24, paddingTop: 8 },
   emptyWrap: { flex: 1, justifyContent: 'center' },
-  loadMoreBtn: {
-    borderWidth: 1,
-    borderColor: FuelColors.border,
-    borderRadius: 10,
-    backgroundColor: FuelColors.surface,
-    alignItems: 'center',
-    paddingVertical: 10,
-    marginTop: 4,
-  },
-  loadMoreTxt: { color: FuelColors.primary, fontWeight: '700', fontSize: 12 },
   rateErr: { color: FuelColors.danger, marginBottom: 8, fontSize: 13 },
   rateInfo: { color: FuelColors.success, marginBottom: 8, fontSize: 13, fontWeight: '600' },
 });

@@ -1,22 +1,22 @@
-import React, { useState, useMemo } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-} from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
 import { Button, Card, Header, Input, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import type { FuelType } from '@/src/types';
+import { appAlert } from '@/src/utils/appAlert';
+import { href } from '@/src/utils/routerHref';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import {
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 const MAX_QTY_LITRES = 2000;
 const MAX_EXTRA_CASH = 20000;
@@ -80,23 +80,23 @@ export default function NewRequestScreen() {
     const ec = extraCashValue || 0;
 
     if (!vehicleNo.trim()) {
-      Alert.alert('Check inputs', 'Enter vehicle number');
+      appAlert('Check inputs', 'Enter vehicle number');
       return;
     }
     if (!isVehicleValid) {
-      Alert.alert('Check inputs', 'Vehicle number format should look like: HR55AB1234');
+      appAlert('Check inputs', 'Vehicle number format should look like: HR55AB1234');
       return;
     }
     if (!isTankFull && (!qValue || qValue <= 0)) {
-      Alert.alert('Check inputs', 'Enter quantity in litres');
+      appAlert('Check inputs', 'Enter quantity in litres');
       return;
     }
     if (!isTankFull && qValue > MAX_QTY_LITRES) {
-      Alert.alert('Quantity limit', `Fuel quantity cannot exceed ${MAX_QTY_LITRES} L`);
+      appAlert('Quantity limit', `Fuel quantity cannot exceed ${MAX_QTY_LITRES} L`);
       return;
     }
     if (ec > MAX_EXTRA_CASH) {
-      Alert.alert('Extra cash limit', `Extra cash cannot exceed Rs ${MAX_EXTRA_CASH.toLocaleString('en-IN')}`);
+      appAlert('Extra cash limit', `Extra cash cannot exceed Rs ${MAX_EXTRA_CASH.toLocaleString('en-IN')}`);
       return;
     }
 
@@ -110,8 +110,8 @@ export default function NewRequestScreen() {
       extraCash: ec > 0 ? ec : undefined,
       notes: notes || undefined,
     });
-    Alert.alert('Request Sent', `Fuel request for ${vehicleNo.toUpperCase()} has been raised with ${pump?.name}.`, [
-      { text: 'OK', onPress: () => router.push(href(`/(admin)/pumps/${id}`)) },
+    appAlert('Request Sent', `Fuel request for ${vehicleNo.toUpperCase()} has been raised with ${pump?.name}.`, [
+      { text: 'OK', onPress: () => router.replace(href('/(admin)/(tabs)/dashboard')) },
     ]);
   };
 

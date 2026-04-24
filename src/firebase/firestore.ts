@@ -1,19 +1,19 @@
+import type {
+    Bill,
+    BillStatus,
+    Company,
+    CompanyPumpLink,
+    FuelDiscount,
+    FuelRequest,
+    FuelType,
+    Pump,
+    PumpInvite,
+    RequestStatus,
+    Transaction,
+    User,
+} from '@/src/types';
 import firestore, { type FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { Platform } from 'react-native';
-import type {
-  Bill,
-  BillStatus,
-  Company,
-  CompanyPumpLink,
-  FuelDiscount,
-  FuelRequest,
-  FuelType,
-  Pump,
-  PumpInvite,
-  RequestStatus,
-  Transaction,
-  User,
-} from '@/src/types';
 
 const db = Platform.OS === 'web' ? null : firestore();
 function requireDb() {
@@ -322,10 +322,27 @@ export async function registerPumpInFirestore(input: {
     address: input.address.trim(),
     contact: input.contact.trim(),
     ownerUserId: input.uid,
+    hsdRate: null,
+    msRate: null,
   });
   batch.set(usersRef().doc(input.uid), user);
   await batch.commit();
   return user;
+}
+
+export async function updatePumpFuelRates(
+  pumpId: string,
+  patch: { hsdRate?: number | null; msRate?: number | null }
+) {
+  const payload: { hsdRate?: number | null; msRate?: number | null } = {};
+  if (Object.prototype.hasOwnProperty.call(patch, 'hsdRate')) {
+    payload.hsdRate = patch.hsdRate ?? null;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'msRate')) {
+    payload.msRate = patch.msRate ?? null;
+  }
+  if (!Object.keys(payload).length) return;
+  await pumpsRef().doc(pumpId).update(payload);
 }
 
 export async function createInvite(companyId: string): Promise<PumpInvite> {
