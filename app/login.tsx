@@ -1,3 +1,10 @@
+import { FuelColors } from '@/constants/theme';
+import { Button, Card, Input, Screen } from '@/src/components/ui';
+import { useApp } from '@/src/context/AppContext';
+import { sendPasswordReset } from '@/src/firebase/auth';
+import type { User } from '@/src/types';
+import { href } from '@/src/utils/routerHref';
+import { useRouter, type Href } from 'expo-router';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -7,54 +14,63 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useRouter, type Href } from 'expo-router';
-import { FuelColors } from '@/constants/theme';
-import { href } from '@/src/utils/routerHref';
-import { Button, Card, Input, Screen } from '@/src/components/ui';
-import { useApp } from '@/src/context/AppContext';
-import type { User } from '@/src/types';
-import { sendPasswordReset } from '@/src/firebase/auth';
 
+/* ---------- Route Logic ---------- */
 function routeForRole(user: User): Href {
   if (user.role === 'admin') return href('/(admin)/(tabs)/dashboard');
   if (user.role === 'pumpOwner') return href('/(pump)/(home)/companies');
-  if (user.role === 'employee' && user.companyId) return href('/companyEmployee/(tabs)/pending');
+  if (user.role === 'employee' && user.companyId)
+    return href('/companyEmployee/(tabs)/pending');
   return href('/(employee)/(tabs)/pending');
 }
 
+/* ---------- Screen ---------- */
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useApp();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [err, setErr] = useState('');
 
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  /* ---------- Validation ---------- */
+  const isValid = email.trim() && password.trim();
+
+  /* ---------- Login ---------- */
   const onLogin = async () => {
-    setErr('');
-    let u = null;
+    if (!isValid || loading) return;
+
+    setLoading(true);
+    setError('');
+
     try {
-      u = await login(email.trim(), password);
+      const user = await login(email.trim(), password);
+
+      if (!user) throw new Error();
+
+      router.replace(routeForRole(user));
     } catch {
-      setErr('Invalid email or password');
-      return;
+      setError('Invalid email or password');
+    } finally {
+      setLoading(false);
     }
-    if (!u) {
-      setErr('Invalid email or password');
-      return;
-    }
-    router.replace(routeForRole(u));
   };
 
+  /* ---------- Forgot Password ---------- */
   const onForgotPassword = async () => {
     if (!email.trim()) {
-      setErr('Enter email first to reset password');
+      setError('Enter email first');
       return;
     }
+
     try {
       await sendPasswordReset(email.trim());
-      setErr('Password reset email sent');
+      setError('');
+      alert('Password reset email sent');
     } catch {
-      setErr('Could not send reset email');
+      setError('Failed to send reset email');
     }
   };
 
@@ -67,46 +83,76 @@ export default function LoginScreen() {
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.brand}>Fuel Credit</Text>
-          <Text style={styles.hint}>Sign in with pump or company credentials</Text>
+          {/* ---------- Header ---------- */}
+          <View style={styles.hero}>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>FUEL CREDIT</Text>
+            </View>
 
+            <Text style={styles.title}>Welcome back</Text>
+            <Text style={styles.subtitle}>
+              Sign in to manage fuel requests and operations
+            </Text>
+          </View>
+
+          {/* ---------- Form ---------- */}
           <Card style={styles.card}>
             <Input
               label="Email"
               autoCapitalize="none"
               keyboardType="email-address"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => {
+                setEmail(t);
+                setError('');
+              }}
               placeholder="you@company.com"
+              editable={!loading}
             />
+
             <Input
               label="Password"
               secureTextEntry
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(t) => {
+                setPassword(t);
+                setError('');
+              }}
               placeholder="••••••••"
+              editable={!loading}
             />
-            {err ? <Text style={styles.err}>{err}</Text> : null}
-            <Button title="Sign in" onPress={onLogin} />
-            <Button title="Forgot password" variant="outline" onPress={onForgotPassword} />
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <Button
+              title={loading ? 'Signing in...' : 'Sign in'}
+              onPress={onLogin}
+              disabled={!isValid || loading}
+              style={[
+                styles.loginBtn,
+                (!isValid || loading) && styles.disabledBtn,
+              ]}
+            />
+
+            <Button
+              title="Forgot password?"
+              variant="outline"
+              onPress={onForgotPassword}
+              disabled={loading}
+            />
           </Card>
 
-          <View style={styles.regRow}>
+          {/* ---------- Register CTA ---------- */}
+          <View style={styles.registerWrap}>
+            <Text style={styles.registerText}>New here?</Text>
+
             <Button
-              title="Register company"
+              title="Create Account"
               variant="secondary"
-              onPress={() => router.push(href('/register-company'))}
-            />
-            <Button
-              title="Register pump"
-              variant="secondary"
-              onPress={() => router.push(href('/register-pump'))}
-            />
-            <Button
-              title="Employee signup"
-              variant="secondary"
-              onPress={() => router.push(href('/register-employee'))}
+              onPress={() => router.push(href('/register'))}
+              disabled={loading}
             />
           </View>
         </ScrollView>
@@ -115,22 +161,80 @@ export default function LoginScreen() {
   );
 }
 
+/* ---------- Styles ---------- */
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scroll: { padding: 20, paddingTop: 48, paddingBottom: 40 },
-  brand: {
-    fontSize: 32,
+
+  scroll: {
+    padding: 20,
+    paddingTop: 40,
+    paddingBottom: 40,
+    flexGrow: 1,
+  },
+
+  hero: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+
+  badge: {
+    backgroundColor: FuelColors.primaryMuted,
+    borderColor: FuelColors.primary,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginBottom: 12,
+  },
+
+  badgeText: {
+    color: FuelColors.primary,
+    fontSize: 11,
     fontWeight: '800',
+    letterSpacing: 0.7,
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: '900',
     color: FuelColors.text,
     textAlign: 'center',
   },
-  hint: {
+
+  subtitle: {
     textAlign: 'center',
     color: FuelColors.textSecondary,
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: 6,
+    fontSize: 14,
   },
-  card: { marginBottom: 16 },
-  err: { color: FuelColors.danger, marginBottom: 12, fontSize: 14 },
-  regRow: { gap: 10, marginBottom: 24 },
+
+  card: {
+    padding: 18,
+    marginBottom: 20,
+  },
+
+  error: {
+    color: FuelColors.danger,
+    marginBottom: 10,
+    fontSize: 13,
+  },
+
+  loginBtn: {
+    marginBottom: 10,
+  },
+
+  disabledBtn: {
+    opacity: 0.5,
+  },
+
+  registerWrap: {
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  registerText: {
+    color: FuelColors.textSecondary,
+    fontSize: 13,
+  },
 });

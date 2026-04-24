@@ -42,13 +42,13 @@ export default function AdminProfile() {
         <View style={styles.btnRow}>
           <Button
             title="Update Profile"
-            variant="outline"
+            variant="secondary"
             onPress={() => {}}
             style={{ marginBottom: 12 }}
           />
           <Button
             title="Log Out"
-            variant="outline"
+            variant="danger"
             onPress={async () => {
               await logout();
             }}

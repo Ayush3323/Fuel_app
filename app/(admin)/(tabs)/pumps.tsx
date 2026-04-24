@@ -47,28 +47,16 @@ function PumpRow({
 }
 
 export default function PumpsList() {
-  const router = useRouter();
   const { currentUser, getPumpsForCompany } = useApp();
   const companyId = currentUser?.companyId ?? '';
   const pumps = getPumpsForCompany(companyId);
 
   return (
     <Screen>
-      <Header
-        title="Linked Pumps"
-        showBack={false}
-        right={
-          <Pressable
-            onPress={() => router.push(href('/(admin)/(tabs)/invites'))}
-            style={styles.joinBtn}
-          >
-            <Text style={styles.joinTxt}>+ Invite</Text>
-          </Pressable>
-        }
-      />
+      <Header title="Linked Pumps" showBack={false} />
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <Text style={styles.note}>
-          Manage your linked petrol pumps and view outstanding credit balances.
+          Manage linked pumps and outstanding credit. Invite new pumps from More -> Invites.
         </Text>
         
         <View style={styles.headingWrap}>
@@ -105,13 +93,6 @@ const styles = StyleSheet.create({
   },
   headingWrap: { marginBottom: 6 },
   list: { },
-  joinBtn: {
-    backgroundColor: FuelColors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  joinTxt: { color: '#fff', fontWeight: '800', fontSize: 13 },
   card: { marginBottom: 12, padding: 14 },
   cardContent: { flexDirection: 'row', alignItems: 'center' },
   name: { fontSize: 16, fontWeight: '800', color: FuelColors.text },

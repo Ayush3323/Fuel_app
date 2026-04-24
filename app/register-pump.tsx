@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +15,7 @@ import { href } from '@/src/utils/routerHref';
 
 export default function RegisterPumpScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView | null>(null);
   const { registerPump } = useApp();
   const [pumpName, setPumpName] = useState('');
   const [address, setAddress] = useState('');
@@ -22,20 +23,29 @@ export default function RegisterPumpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [ownerName, setOwnerName] = useState('');
-  const [err, setErr] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const scrollForFocus = (y: number, forceEnd = false) => {
+    scrollRef.current?.scrollTo({ y, animated: true });
+    if (forceEnd) {
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 120);
+    }
+  };
+
+  const isFormValid =
+    pumpName.trim() &&
+    address.trim() &&
+    contact.trim() &&
+    email.trim() &&
+    password.length >= 6;
 
   const onSubmit = async () => {
-    setErr('');
-    if (
-      !pumpName.trim() ||
-      !address.trim() ||
-      !contact.trim() ||
-      !email.trim() ||
-      !password.trim()
-    ) {
-      setErr('All required fields must be filled');
-      return;
-    }
+    if (!isFormValid || loading) return;
+    setError('');
+    setLoading(true);
     try {
       await registerPump({
         name: pumpName.trim(),
@@ -47,85 +57,118 @@ export default function RegisterPumpScreen() {
       });
       router.replace(href('/(pump)/(home)/companies') as Href);
     } catch (e: any) {
-      setErr(e?.message || 'Could not create pump account');
+      setError(e?.message || 'Failed to create account');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Screen>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.headerSection}>
-            <View style={styles.iconContainer}>
-              <Text style={styles.iconEmoji}>⛽</Text>
-            </View>
-            <Text style={styles.title}>Register your pump</Text>
+            <Text style={styles.title}>Create Pump Account</Text>
             <Text style={styles.sub}>
-              Join the Fuel Credit network and connect with transport companies seamlessly.
+              Register your fuel station and connect with transport companies.
             </Text>
           </View>
 
           <Card style={styles.formCard}>
-            <Input 
-              label="Pump / station name" 
+            <Input
+              label="Pump / station name"
               placeholder="e.g. Reliable Fuels"
-              value={pumpName} 
-              onChangeText={setPumpName} 
+              value={pumpName}
+              onChangeText={(t) => {
+                setPumpName(t);
+                setError('');
+              }}
+              editable={!loading}
+              onFocus={() => scrollForFocus(130)}
             />
-            <Input 
-              label="Address" 
+            <Input
+              label="Address"
               placeholder="Full location details"
-              value={address} 
-              onChangeText={setAddress} 
+              value={address}
+              onChangeText={(t) => {
+                setAddress(t);
+                setError('');
+              }}
+              editable={!loading}
+              onFocus={() => scrollForFocus(190)}
             />
-            <Input 
-              label="Contact number" 
+            <Input
+              label="Contact number"
               keyboardType="phone-pad"
               placeholder="+91 XXXXX XXXXX"
-              value={contact} 
-              onChangeText={setContact} 
+              value={contact}
+              onChangeText={(t) => {
+                setContact(t);
+                setError('');
+              }}
+              editable={!loading}
+              onFocus={() => scrollForFocus(250)}
             />
             <Input
               label="Owner name"
               placeholder="Full name for display"
               value={ownerName}
-              onChangeText={setOwnerName}
+              onChangeText={(t) => {
+                setOwnerName(t);
+                setError('');
+              }}
+              editable={!loading}
+              onFocus={() => scrollForFocus(300)}
             />
-            <View style={styles.divider} />
             <Input
               label="Email"
               autoCapitalize="none"
               keyboardType="email-address"
               placeholder="owner@pump.com"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => {
+                setEmail(t);
+                setError('');
+              }}
+              editable={!loading}
+              onFocus={() => scrollForFocus(380)}
             />
             <Input
               label="Password"
               secureTextEntry
               placeholder="••••••••"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(t) => {
+                setPassword(t);
+                setError('');
+              }}
+              editable={!loading}
+              onFocus={() => scrollForFocus(430, true)}
             />
-            {err ? <Text style={styles.err}>{err}</Text> : null}
-            <Button 
-              title="Create Pump Account" 
-              onPress={onSubmit} 
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            <Button
+              title={loading ? 'Creating account...' : 'Create account'}
+              onPress={onSubmit}
               style={styles.submitBtn}
+              disabled={!isFormValid || loading}
             />
           </Card>
-          
+
           <Button
-            title="Back to login"
+            title="Back to sign in"
             variant="outline"
             onPress={() => router.back()}
             style={styles.backBtn}
+            disabled={loading}
           />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -134,47 +177,26 @@ export default function RegisterPumpScreen() {
 }
 
 const styles = StyleSheet.create({
-  body: { padding: 20, paddingBottom: 60 },
+  body: { padding: 20, paddingBottom: 72, flexGrow: 1 },
   headerSection: {
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 32,
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: FuelColors.primaryMuted,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  iconEmoji: { fontSize: 32 },
-  title: { 
-    fontSize: 28, 
-    fontWeight: '900', 
-    color: FuelColors.text,
-    textAlign: 'center',
-  },
-  sub: { 
-    color: FuelColors.textSecondary, 
-    marginTop: 10, 
-    lineHeight: 20,
-    textAlign: 'center',
-    paddingHorizontal: 20,
-    fontSize: 15,
-  },
-  formCard: {
-    padding: 24,
     marginBottom: 20,
   },
-  divider: {
-    height: 1,
-    backgroundColor: FuelColors.border,
-    marginVertical: 16,
-    opacity: 0.5,
+  title: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: FuelColors.text,
   },
-  err: { color: FuelColors.danger, marginBottom: 10, fontSize: 13 },
-  submitBtn: { marginTop: 12 },
+  sub: {
+    color: FuelColors.textSecondary,
+    marginTop: 6,
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  formCard: {
+    padding: 18,
+    marginBottom: 20,
+  },
+  error: { color: FuelColors.danger, marginBottom: 10, fontSize: 13 },
+  submitBtn: { marginTop: 6 },
   backBtn: { marginTop: 10 },
 });

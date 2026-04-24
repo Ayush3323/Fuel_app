@@ -25,6 +25,15 @@ export default function AdminTabs() {
         }}
       />
       <Tabs.Screen
+        name="requests"
+        options={{
+          title: 'Requests',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="list-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="pumps"
         options={{
           title: 'Pumps',
@@ -34,21 +43,9 @@ export default function AdminTabs() {
         }}
       />
       <Tabs.Screen
-        name="pending"
-        options={{
-          title: 'Pending',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="completed"
         options={{
-          title: 'Completed',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="checkmark-circle-outline" size={size} color={color} />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -67,23 +64,17 @@ export default function AdminTabs() {
         }}
       />
       <Tabs.Screen
-        name="team"
+        name="more"
         options={{
-          title: 'Team',
+          title: 'More',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
+            <Ionicons name="menu-outline" size={size} color={color} />
           ),
         }}
       />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="pending" options={{ href: null }} />
+      <Tabs.Screen name="team" options={{ href: null }} />
+      <Tabs.Screen name="profile" options={{ href: null }} />
     </Tabs>
   );
 }
