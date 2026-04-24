@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { FuelColors } from '@/constants/theme';
 import {
   Card,
@@ -20,6 +20,12 @@ export default function EmployeeCompleted() {
   const company = getCompany(companyId);
   const [filter, setFilter] = useState<'all' | string>('all');
   const [q, setQ] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 700);
+  };
 
   const list = useMemo(() => {
     let rows = transactions.filter(
@@ -65,6 +71,9 @@ export default function EmployeeCompleted() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={FuelColors.primary} />
+        }
         ListEmptyComponent={
           <EmptyState title="No history found" />
         }

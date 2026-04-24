@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FuelColors } from '@/constants/theme';
 import {
@@ -14,6 +14,7 @@ import {
 import { useApp } from '@/src/context/AppContext';
 
 type RequestsTab = 'pending' | 'completed';
+const PAGE_SIZE = 12;
 
 export default function AdminRequestsScreen() {
   const { requests, transactions, currentUser, pumps, getCompany, getPumpsForCompany } = useApp();
@@ -23,6 +24,8 @@ export default function AdminRequestsScreen() {
   const [filter, setFilter] = useState<'all' | string>('all');
   const [q, setQ] = useState('');
   const [tab, setTab] = useState<RequestsTab>('pending');
+  const [pendingVisible, setPendingVisible] = useState(PAGE_SIZE);
+  const [completedVisible, setCompletedVisible] = useState(PAGE_SIZE);
 
   const pendingRows = useMemo(() => {
     let rows = requests.filter(
@@ -50,6 +53,16 @@ export default function AdminRequestsScreen() {
   }, [transactions, companyId, filter, q]);
 
   const isPending = tab === 'pending';
+  const pendingData = useMemo(() => pendingRows.slice(0, pendingVisible), [pendingRows, pendingVisible]);
+  const completedData = useMemo(
+    () => completedRows.slice(0, completedVisible),
+    [completedRows, completedVisible]
+  );
+
+  useEffect(() => {
+    setPendingVisible(PAGE_SIZE);
+    setCompletedVisible(PAGE_SIZE);
+  }, [filter, q, tab]);
 
   return (
     <Screen>
@@ -79,11 +92,22 @@ export default function AdminRequestsScreen() {
 
       {isPending ? (
         <FlatList
-          data={pendingRows}
+          data={pendingData}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          onEndReachedThreshold={0.3}
+          onEndReached={() => {
+            if (pendingVisible < pendingRows.length) {
+              setPendingVisible((v) => v + PAGE_SIZE);
+            }
+          }}
           ListEmptyComponent={<EmptyState title="No pending requests" />}
+          ListFooterComponent={
+            pendingVisible < pendingRows.length ? (
+              <Text style={styles.loadMore}>Loading more...</Text>
+            ) : null
+          }
           renderItem={({ item }) => {
             const pump =
               linked.find((p) => p.id === item.pumpId) ?? pumps.find((p) => p.id === item.pumpId);
@@ -109,11 +133,22 @@ export default function AdminRequestsScreen() {
         />
       ) : (
         <FlatList
-          data={completedRows}
+          data={completedData}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          onEndReachedThreshold={0.3}
+          onEndReached={() => {
+            if (completedVisible < completedRows.length) {
+              setCompletedVisible((v) => v + PAGE_SIZE);
+            }
+          }}
           ListEmptyComponent={<EmptyState title="No completed records" />}
+          ListFooterComponent={
+            completedVisible < completedRows.length ? (
+              <Text style={styles.loadMore}>Loading more...</Text>
+            ) : null
+          }
           renderItem={({ item }) => {
             const pump =
               linked.find((p) => p.id === item.pumpId) ?? pumps.find((p) => p.id === item.pumpId);
@@ -174,4 +209,11 @@ const styles = StyleSheet.create({
   v: { fontSize: 16, fontWeight: '800', color: FuelColors.text, marginBottom: 6 },
   primaryMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   meta: { color: FuelColors.textSecondary, fontSize: 13, fontWeight: '600' },
+  loadMore: {
+    textAlign: 'center',
+    color: FuelColors.textMuted,
+    fontSize: 12,
+    paddingVertical: 8,
+    fontWeight: '600',
+  },
 });

@@ -62,7 +62,6 @@ export default function PumpHomeStack() {
       />
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="join" options={{ href: null }} />
-      <Tabs.Screen name="team/new" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -1,13 +1,16 @@
 import { FuelColors } from '@/constants/theme';
 import { Badge, Button, Card, Header, Screen, SectionTitle } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+const THRESHOLD = 12;
 
 export default function AdminInvitesScreen() {
   const { invites, pumps, currentUser, createInvite } = useApp();
   const companyId = currentUser?.companyId ?? '';
   const [lastCode, setLastCode] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(THRESHOLD);
 
   const list = useMemo(
     () =>
@@ -19,6 +22,13 @@ export default function AdminInvitesScreen() {
         ),
     [invites, companyId]
   );
+  const visibleList = useMemo(
+    () => (list.length > THRESHOLD ? list.slice(0, visibleCount) : list),
+    [list, visibleCount]
+  );
+  useEffect(() => {
+    setVisibleCount(THRESHOLD);
+  }, [list.length]);
 
   const onGenerate = async () => {
     try {
@@ -58,7 +68,7 @@ export default function AdminInvitesScreen() {
         </View>
 
         <View style={styles.list}>
-          {list.map((inv) => {
+          {visibleList.map((inv) => {
             const redeemed = !!inv.redeemedByPumpId;
             const isExpired = !redeemed && !!inv.expiresAt && new Date(inv.expiresAt).getTime() <= Date.now();
             const pumpName = inv.redeemedByPumpId
@@ -86,6 +96,9 @@ export default function AdminInvitesScreen() {
           {list.length === 0 && !lastCode && (
             <Text style={styles.empty}>No active or past invite codes found.</Text>
           )}
+          {list.length > THRESHOLD && visibleCount < list.length ? (
+            <Button title="Load More" variant="secondary" onPress={() => setVisibleCount((v) => v + THRESHOLD)} />
+          ) : null}
         </View>
       </ScrollView>
     </Screen>

@@ -18,6 +18,8 @@ import {
 function mapAuthError(error: unknown): string {
   const code = (error as { code?: string })?.code ?? '';
   switch (code) {
+    case 'app/no-native-firebase':
+      return 'This web build does not support Firebase native auth. Use Android/iOS app.';
     case 'auth/invalid-email':
       return 'Invalid email format';
     case 'auth/user-not-found':
@@ -29,6 +31,8 @@ function mapAuthError(error: unknown): string {
       return 'Too many attempts. Try again in a few minutes.';
     case 'auth/network-request-failed':
       return 'Network issue. Check your internet and try again.';
+    case 'firestore/unavailable':
+      return 'Server temporarily unavailable. Please retry in a moment.';
     default:
       return 'Unable to sign in right now. Please try again.';
   }

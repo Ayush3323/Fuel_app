@@ -9,15 +9,16 @@ type Props = {
   subtitle?: string;
   showBack?: boolean;
   right?: ReactNode;
+  onBack?: () => void;
 };
 
-export function Header({ title, subtitle, showBack = true, right }: Props) {
+export function Header({ title, subtitle, showBack = true, right, onBack }: Props) {
   const router = useRouter();
   return (
     <View style={styles.row}>
       {showBack && (
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => (onBack ? onBack() : router.back())}
           hitSlop={12}
           style={({ pressed }) => [styles.back, pressed && { opacity: 0.6 }]}
         >

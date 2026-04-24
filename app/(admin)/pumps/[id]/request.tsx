@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,6 +18,14 @@ import { Button, Card, Header, Input, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import type { FuelType } from '@/src/types';
 
+const MAX_QTY_LITRES = 2000;
+const MAX_EXTRA_CASH = 20000;
+const VEHICLE_REGEX = /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/;
+
+function normalizeVehicleNo(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
 export default function NewRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -30,6 +40,18 @@ export default function NewRequestScreen() {
   const [fuel, setFuel] = useState<FuelType>('HSD');
   const [extraCash, setExtraCash] = useState('');
   const [notes, setNotes] = useState('');
+  const normalizedVehicle = useMemo(() => normalizeVehicleNo(vehicleNo), [vehicleNo]);
+  const isVehicleValid = useMemo(() => VEHICLE_REGEX.test(normalizedVehicle), [normalizedVehicle]);
+  const qtyValue = useMemo(() => parseFloat(qty), [qty]);
+  const extraCashValue = useMemo(() => parseFloat(extraCash), [extraCash]);
+  const isQtyOverLimit = useMemo(
+    () => !isTankFull && Number.isFinite(qtyValue) && qtyValue > MAX_QTY_LITRES,
+    [isTankFull, qtyValue]
+  );
+  const isExtraCashOverLimit = useMemo(
+    () => Number.isFinite(extraCashValue) && extraCashValue > MAX_EXTRA_CASH,
+    [extraCashValue]
+  );
 
   // Autocomplete logic for vehicle number
   const vehicleHistory = useMemo(() => {
@@ -54,22 +76,34 @@ export default function NewRequestScreen() {
   }, [vehicleNo, vehicleHistory]);
 
   const submit = () => {
-    const qValue = isTankFull ? 0 : parseFloat(qty);
-    const ec = parseFloat(extraCash) || 0;
+    const qValue = isTankFull ? 0 : qtyValue;
+    const ec = extraCashValue || 0;
 
     if (!vehicleNo.trim()) {
       Alert.alert('Check inputs', 'Enter vehicle number');
+      return;
+    }
+    if (!isVehicleValid) {
+      Alert.alert('Check inputs', 'Vehicle number format should look like: HR55AB1234');
       return;
     }
     if (!isTankFull && (!qValue || qValue <= 0)) {
       Alert.alert('Check inputs', 'Enter quantity in litres');
       return;
     }
+    if (!isTankFull && qValue > MAX_QTY_LITRES) {
+      Alert.alert('Quantity limit', `Fuel quantity cannot exceed ${MAX_QTY_LITRES} L`);
+      return;
+    }
+    if (ec > MAX_EXTRA_CASH) {
+      Alert.alert('Extra cash limit', `Extra cash cannot exceed Rs ${MAX_EXTRA_CASH.toLocaleString('en-IN')}`);
+      return;
+    }
 
     createFuelRequest({
       companyId,
       pumpId: id!,
-      vehicleNo: vehicleNo.trim().toUpperCase(),
+      vehicleNo: normalizedVehicle,
       fuel,
       qty: qValue,
       isTankFull,
@@ -84,21 +118,30 @@ export default function NewRequestScreen() {
   return (
     <Screen>
       <Header title="New Request" subtitle={pump?.name}/>
-      <ScrollView 
-        contentContainerStyle={styles.body} 
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
       >
-        <Text style={styles.co}>{company?.name}</Text>
+        <ScrollView 
+          contentContainerStyle={styles.body} 
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.co}>{company?.name}</Text>
         
         <View style={[styles.section, styles.inputWrap]}>
           <Input
             label="Vehicle Number"
             value={vehicleNo}
-            onChangeText={setVehicleNo}
+            onChangeText={(t) => setVehicleNo(normalizeVehicleNo(t).slice(0, 10))}
             autoCapitalize="characters"
-            placeholder="e.g. HR55 XY 1234"
+            placeholder="e.g. HR55AB1234"
+            maxLength={10}
           />
+          {vehicleNo.length > 0 && !isVehicleValid ? (
+            <Text style={styles.warn}>Vehicle number must match format: HR55AB1234</Text>
+          ) : null}
           {vehicleSuggestions.length > 0 && (
             <View style={styles.suggestions}>
               {vehicleSuggestions.map((v) => (
@@ -134,10 +177,16 @@ export default function NewRequestScreen() {
                 keyboardType="numeric"
                 value={extraCash}
                 onChangeText={setExtraCash}
-                placeholder="₹ 0"
+                placeholder="Rs 0"
               />
             </View>
           </View>
+          {isQtyOverLimit ? (
+            <Text style={styles.warn}>Fuel quantity cannot be more than {MAX_QTY_LITRES} L</Text>
+          ) : null}
+          {isExtraCashOverLimit ? (
+            <Text style={styles.warn}>Extra cash cannot be more than Rs {MAX_EXTRA_CASH.toLocaleString('en-IN')}</Text>
+          ) : null}
           
           <TouchableOpacity 
             activeOpacity={0.7}
@@ -184,15 +233,21 @@ export default function NewRequestScreen() {
           />
         </View>
 
-        <View style={styles.btnPad}>
-          <Button title="Raise Fuel Request" onPress={submit} />
-        </View>
-      </ScrollView>
+          <View style={styles.btnPad}>
+            <Button
+              title="Raise Fuel Request"
+              onPress={submit}
+              disabled={!isVehicleValid || isQtyOverLimit || isExtraCashOverLimit}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   body: { padding: 16, paddingTop: 16, paddingBottom: 40 },
   co: { 
     marginBottom: 16, 
@@ -234,6 +289,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   suggestionText: { color: FuelColors.text, fontWeight: '700', fontSize: 14 },
+  warn: { marginTop: 6, color: '#B45309', fontSize: 12, fontWeight: '600' },
   
   qtySection: { },
   inputRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },

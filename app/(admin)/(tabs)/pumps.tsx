@@ -4,7 +4,10 @@ import { useApp, useOutstandingForLink } from '@/src/context/AppContext';
 import { href } from '@/src/utils/routerHref';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+const THRESHOLD = 12;
 
 function PumpRow({
   id,
@@ -50,6 +53,14 @@ export default function PumpsList() {
   const { currentUser, getPumpsForCompany } = useApp();
   const companyId = currentUser?.companyId ?? '';
   const pumps = getPumpsForCompany(companyId);
+  const [visibleCount, setVisibleCount] = useState(THRESHOLD);
+  const visiblePumps = useMemo(
+    () => (pumps.length > THRESHOLD ? pumps.slice(0, visibleCount) : pumps),
+    [pumps, visibleCount]
+  );
+  useEffect(() => {
+    setVisibleCount(THRESHOLD);
+  }, [pumps.length]);
 
   return (
     <Screen>
@@ -64,7 +75,7 @@ export default function PumpsList() {
         </View>
 
         <View style={styles.list}>
-          {pumps.map((p) => (
+          {visiblePumps.map((p) => (
             <PumpRow
               key={p.id}
               id={p.id}
@@ -76,6 +87,11 @@ export default function PumpsList() {
           {pumps.length === 0 && (
             <Text style={styles.empty}>No pumps linked yet. Use + Invite to share a code with pump owners.</Text>
           )}
+          {pumps.length > THRESHOLD && visibleCount < pumps.length ? (
+            <Pressable style={styles.loadMoreBtn} onPress={() => setVisibleCount((v) => v + THRESHOLD)}>
+              <Text style={styles.loadMoreTxt}>Load More Pumps</Text>
+            </Pressable>
+          ) : null}
         </View>
       </ScrollView>
     </Screen>
@@ -109,4 +125,13 @@ const styles = StyleSheet.create({
     borderRadius: 6 
   },
   empty: { textAlign: 'center', color: FuelColors.textMuted, padding: 32, fontSize: 14 },
+  loadMoreBtn: {
+    borderWidth: 1,
+    borderColor: FuelColors.border,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: FuelColors.surface,
+  },
+  loadMoreTxt: { color: FuelColors.primary, fontWeight: '700', fontSize: 12 },
 });

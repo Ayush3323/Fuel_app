@@ -132,7 +132,7 @@ export default function PumpProfile() {
           </View>
         </View>
 
-        <Button
+        {/* <Button
           title="Update Profile"
           variant="secondary"
           style={styles.updateBtn}
@@ -141,7 +141,7 @@ export default function PumpProfile() {
             setErr('');
             setOpen(true);
           }}
-        />
+        /> */}
 
         <Button
           title="Sign Out"

@@ -1,4 +1,5 @@
 import firestore, { type FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import { Platform } from 'react-native';
 import type {
   Bill,
   BillStatus,
@@ -14,7 +15,13 @@ import type {
   User,
 } from '@/src/types';
 
-const db = firestore();
+const db = Platform.OS === 'web' ? null : firestore();
+function requireDb() {
+  if (!db) {
+    throw new Error('Firebase native modules are unavailable on web. Use Android/iOS dev build.');
+  }
+  return db;
+}
 const INVITE_TTL_MS = 5 * 60 * 1000;
 const MAX_ACTIVE_INVITES = 3;
 
@@ -36,34 +43,34 @@ function asDoc<T>(id: string, data: FirebaseFirestoreTypes.DocumentData): T {
 }
 
 export function usersRef() {
-  return db.collection('users');
+  return requireDb().collection('users');
 }
 export function companiesRef() {
-  return db.collection('companies');
+  return requireDb().collection('companies');
 }
 export function pumpsRef() {
-  return db.collection('pumps');
+  return requireDb().collection('pumps');
 }
 export function linksRef() {
-  return db.collection('companyPumpLinks');
+  return requireDb().collection('companyPumpLinks');
 }
 export function invitesRef() {
-  return db.collection('pumpInvites');
+  return requireDb().collection('pumpInvites');
 }
 export function pendingEmployeesRef() {
-  return db.collection('pendingEmployees');
+  return requireDb().collection('pendingEmployees');
 }
 export function pendingCompanyEmployeesRef() {
-  return db.collection('pendingCompanyEmployees');
+  return requireDb().collection('pendingCompanyEmployees');
 }
 export function requestsRef() {
-  return db.collection('fuelRequests');
+  return requireDb().collection('fuelRequests');
 }
 export function transactionsRef() {
-  return db.collection('transactions');
+  return requireDb().collection('transactions');
 }
 export function billsRef() {
-  return db.collection('bills');
+  return requireDb().collection('bills');
 }
 
 export function subscribeUsers(scope: UserScope, cb: (users: User[]) => void): Unsubscribe {
@@ -282,7 +289,7 @@ export async function registerCompanyInFirestore(input: {
     companyId,
     createdAt: new Date().toISOString(),
   };
-  const batch = db.batch();
+  const batch = requireDb().batch();
   batch.set(companiesRef().doc(companyId), {
     name: input.name.trim(),
     gstin: input.gstin?.trim() || null,
@@ -309,7 +316,7 @@ export async function registerPumpInFirestore(input: {
     pumpId,
     createdAt: new Date().toISOString(),
   };
-  const batch = db.batch();
+  const batch = requireDb().batch();
   batch.set(pumpsRef().doc(pumpId), {
     name: input.name.trim(),
     address: input.address.trim(),
@@ -378,7 +385,7 @@ export async function redeemInvite(
       .get();
     if (!linkSnap.empty) return { ok: false, error: 'Already connected to this company' };
 
-    return await db.runTransaction(async (tx) => {
+    return await requireDb().runTransaction(async (tx) => {
       const freshInviteDoc = await tx.get(inviteDoc.ref);
       if (!freshInviteDoc.exists) return { ok: false, error: 'Invalid or already used code' } as const;
       const invite = freshInviteDoc.data()!;
@@ -450,7 +457,7 @@ export async function claimPendingEmployee(input: {
   email: string;
 }): Promise<User | null> {
   const key = input.email.trim().toLowerCase();
-  return db.runTransaction(async (tx) => {
+  return requireDb().runTransaction(async (tx) => {
     const pendingDoc = await tx.get(pendingEmployeesRef().doc(key));
     if (!pendingDoc.exists) return null;
     const pending = pendingDoc.data();
@@ -478,7 +485,7 @@ export async function claimPendingCompanyEmployee(input: {
   email: string;
 }): Promise<User | null> {
   const key = input.email.trim().toLowerCase();
-  return db.runTransaction(async (tx) => {
+  return requireDb().runTransaction(async (tx) => {
     const pendingDoc = await tx.get(pendingCompanyEmployeesRef().doc(key));
     if (!pendingDoc.exists) return null;
     const pending = pendingDoc.data();
@@ -546,7 +553,7 @@ export async function fillFuelRequest(input: {
   advance?: number;
   filledByUserId: string;
 }): Promise<Transaction | null> {
-  return db.runTransaction(async (tx) => {
+  return requireDb().runTransaction(async (tx) => {
     const reqDoc = await tx.get(requestsRef().doc(input.requestId));
     if (!reqDoc.exists) return null;
     const req = reqDoc.data() as FuelRequest;
@@ -587,7 +594,7 @@ export async function createBill(input: {
   previousBalance: number;
   status?: BillStatus;
 }): Promise<Bill> {
-  return db.runTransaction(async (tx) => {
+  return requireDb().runTransaction(async (tx) => {
     const billId = genId('bill');
     const bill: Bill = {
       id: billId,
@@ -621,7 +628,7 @@ export async function raiseBill(id: string) {
 }
 
 export async function deleteBill(id: string) {
-  await db.runTransaction(async (tx) => {
+  await requireDb().runTransaction(async (tx) => {
     const billDoc = await tx.get(billsRef().doc(id));
     if (!billDoc.exists) return;
     const bill = billDoc.data() as Bill;
@@ -641,7 +648,7 @@ export async function markBillPaid(id: string, paymentRefNo: string, paymentProo
 }
 
 export async function assignTransactionsToBill(billId: string, itemIds: string[]) {
-  await db.runTransaction(async (tx) => {
+  await requireDb().runTransaction(async (tx) => {
     const billDoc = await tx.get(billsRef().doc(billId));
     if (!billDoc.exists) return;
     const bill = billDoc.data() as Bill;

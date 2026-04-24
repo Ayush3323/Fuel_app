@@ -1,4 +1,5 @@
-import { Platform, SafeAreaView, StatusBar, StyleSheet, View, type ViewProps } from 'react-native';
+import { Platform, StatusBar, StyleSheet, View, type ViewProps } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { FuelColors } from '@/constants/theme';
 
 type Props = ViewProps & { edges?: 'top' | 'all' };

@@ -4,8 +4,10 @@ import { useApp } from '@/src/context/AppContext';
 import { href } from '@/src/utils/routerHref';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+const PAGE_SIZE = 12;
 
 export default function CompanyTeamTab() {
   const router = useRouter();
@@ -15,6 +17,11 @@ export default function CompanyTeamTab() {
     () => users.filter((u) => u.role === 'employee' && u.companyId === companyId),
     [users, companyId]
   );
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const visibleEmployees = useMemo(() => employees.slice(0, visibleCount), [employees, visibleCount]);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [employees.length]);
 
   return (
     <Screen>
@@ -36,7 +43,7 @@ export default function CompanyTeamTab() {
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {employees.map((u) => (
+        {visibleEmployees.map((u) => (
           <Card key={u.id} style={styles.card}>
             <View style={styles.cardContent}>
               <View style={styles.avatar}>
@@ -56,6 +63,11 @@ export default function CompanyTeamTab() {
               subtitle="Add team members so they can raise and track company requests."
             />
           </View>
+        ) : null}
+        {visibleCount < employees.length ? (
+          <Pressable style={styles.loadMoreBtn} onPress={() => setVisibleCount((v) => v + PAGE_SIZE)}>
+            <Text style={styles.loadMoreTxt}>Load More Employees</Text>
+          </Pressable>
         ) : null}
       </ScrollView>
     </Screen>
@@ -97,4 +109,14 @@ const styles = StyleSheet.create({
   name: { fontWeight: '800', fontSize: 16, color: FuelColors.text },
   meta: { color: FuelColors.textSecondary, fontSize: 13, marginTop: 4 },
   emptyContainer: { marginTop: 80 },
+  loadMoreBtn: {
+    borderWidth: 1,
+    borderColor: FuelColors.border,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: FuelColors.surface,
+    marginTop: 4,
+  },
+  loadMoreTxt: { color: FuelColors.primary, fontWeight: '700', fontSize: 12 },
 });

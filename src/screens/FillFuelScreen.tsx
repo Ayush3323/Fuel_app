@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useSegments } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { FuelColors } from '@/constants/theme';
 import {
@@ -13,13 +13,16 @@ import {
   Screen,
 } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
+import { href } from '@/src/utils/routerHref';
 
 export function FillFuelScreen() {
-  const { requestId, companyId: routeCompanyId } = useLocalSearchParams<{
+  const { requestId, companyId: routeCompanyId, returnTo } = useLocalSearchParams<{
     requestId: string;
     companyId?: string;
+    returnTo?: string;
   }>();
   const router = useRouter();
+  const segments = useSegments();
   const { requests, fillFuelRequest, currentUser, pumps } = useApp();
   const req = requests.find((r) => r.id === requestId);
   const pump = pumps.find((p) => p.id === req?.pumpId);
@@ -31,13 +34,30 @@ export function FillFuelScreen() {
   const isFullTank = req?.isTankFull || req?.qty === 0;
   const [qty, setQty] = useState(isFullTank ? '' : String(req?.qty ?? ''));
   const [rate, setRate] = useState('');
-  const [voucher, setVoucher] = useState(() => {
-    const vNo = req?.vehicleNo.replace(/\s/g, '').slice(-4) || '0000';
-    const rand = Math.floor(10000 + Math.random() * 90000);
-    return `${rand}/${vNo}`;
-  });
   const [extraCash, setExtraCash] = useState(req?.extraCash ? String(req.extraCash) : '');
   const [vehiclePhoto, setVehiclePhoto] = useState<string>();
+
+  const transactionNo = useMemo(() => {
+    const id = String(req?.id ?? '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    return id ? `TXN-${id.slice(-10)}` : 'TXN-UNKNOWN';
+  }, [req?.id]);
+
+  const goToPending = () => {
+    if (returnTo === 'pump-pending') {
+      router.replace(href('/(pump)/(home)/pending'));
+      return;
+    }
+    if (returnTo === 'employee-pending') {
+      router.replace(href('/(employee)/(tabs)/pending'));
+      return;
+    }
+    const isPumpFlow = segments.includes('(pump)') || segments.includes('pump');
+    if (isPumpFlow) {
+      router.replace(href('/(pump)/(home)/pending'));
+      return;
+    }
+    router.replace(href('/companyEmployee/(tabs)/pending'));
+  };
 
   const gross = useMemo(() => {
     const q = parseFloat(qty);
@@ -80,21 +100,21 @@ export function FillFuelScreen() {
       requestId: req.id,
       actualQty: q,
       rate: r,
-      voucherNo: voucher || undefined,
+      voucherNo: transactionNo,
       vehiclePhoto,
       receiptPhoto: vehiclePhoto,
       extraCash: parseFloat(extraCash) || 0,
       filledByUserId: currentUser.id,
     });
     Alert.alert('Submitted', 'Request marked complete.', [
-      { text: 'OK', onPress: () => router.back() },
+      { text: 'OK', onPress: goToPending },
     ]);
   };
 
   if (!req || companyMismatch) {
     return (
       <Screen>
-        <Header title="Fill Fuel" />
+        <Header title="Fill Fuel" onBack={goToPending} />
         <Text style={styles.miss}>
           {companyMismatch ? 'Request not for this company' : 'Request not found'}
         </Text>
@@ -104,7 +124,7 @@ export function FillFuelScreen() {
 
   return (
     <Screen key={req.id}>
-      <Header title="Fill Fuel" subtitle={pump?.name} />
+      <Header title="Fill Fuel" subtitle={pump?.name} onBack={goToPending} />
       <ScrollView 
         contentContainerStyle={styles.body}
         showsVerticalScrollIndicator={false}
@@ -145,10 +165,11 @@ export function FillFuelScreen() {
 
         <View style={styles.section}>
           <Input
-            label="Transaction / Voucher No."
-            value={voucher}
-            onChangeText={setVoucher}
-            placeholder="e.g. 32410/9044"
+            label="Transaction No."
+            value={transactionNo}
+            editable={false}
+            placeholder="Auto-generated"
+            style={styles.disabledInput}
           />
           <Input
             label="Cash to driver (₹)"

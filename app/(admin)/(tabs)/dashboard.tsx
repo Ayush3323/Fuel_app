@@ -1,15 +1,23 @@
 import { FuelColors } from '@/constants/theme';
-import { Card, Header, Screen, SectionTitle, StatTile } from '@/src/components/ui';
+import { Button, Card, Header, Screen, SectionTitle, StatTile } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
+import { href } from '@/src/utils/routerHref';
 import { billTotalForItems } from '@/src/utils/billMath';
-import { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function AdminDashboard() {
+  const router = useRouter();
+  const [showPumpPicker, setShowPumpPicker] = useState(false);
   const { requests, transactions, bills, currentUser, getCompany, getPumpsForCompany } =
     useApp();
   const companyId = currentUser?.companyId;
   const company = companyId ? getCompany(companyId) : undefined;
+  const linkedPumps = useMemo(
+    () => (companyId ? getPumpsForCompany(companyId) : []),
+    [companyId, getPumpsForCompany]
+  );
 
   const pendingCount = useMemo(
     () =>
@@ -56,7 +64,7 @@ export default function AdminDashboard() {
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
-      .slice(0, 5);
+      .slice(0, 3);
   }, [transactions, companyId]);
 
   return (
@@ -66,6 +74,25 @@ export default function AdminDashboard() {
         <Text style={styles.co}>{company?.name}</Text>
 
         <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Quick Action</Text>
+          <Button
+            title="Create Fuel Request"
+            onPress={() => {
+              if (linkedPumps.length === 0) {
+                Alert.alert('No linked pump', 'Link a pump first from the Pumps tab.');
+                return;
+              }
+              if (linkedPumps.length === 1) {
+                router.push(href(`/(admin)/pumps/${linkedPumps[0].id}/request`));
+                return;
+              }
+              setShowPumpPicker(true);
+            }}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Overview</Text>
           <View style={styles.statsRow}>
             <StatTile
               label="Outstanding Credit"
@@ -95,7 +122,12 @@ export default function AdminDashboard() {
         </View>
 
         <View style={styles.section}>
-          <SectionTitle title="Recent Fills" />
+          <View style={styles.sectionHeader}>
+            <SectionTitle title="Recent Fills" />
+            <Pressable onPress={() => router.push(href('/(admin)/(tabs)/requests'))}>
+              <Text style={styles.link}>View all</Text>
+            </Pressable>
+          </View>
           {recent.map((item) => (
             <Card key={item.id} style={styles.card}>
               <View style={styles.cardRow}>
@@ -112,8 +144,39 @@ export default function AdminDashboard() {
           {recent.length === 0 && (
             <Text style={styles.empty}>No transaction history available</Text>
           )}
+          <View style={styles.inlineActions}>
+            <Pressable onPress={() => router.push(href('/(admin)/(tabs)/requests'))} style={styles.miniCta}>
+              <Text style={styles.miniCtaTxt}>Open Requests</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push(href('/(admin)/(tabs)/bills'))} style={styles.miniCta}>
+              <Text style={styles.miniCtaTxt}>Open Bills</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
+
+      <Modal visible={showPumpPicker} transparent animationType="fade" onRequestClose={() => setShowPumpPicker(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowPumpPicker(false)}>
+          <Pressable style={styles.modalSheet} onPress={() => {}}>
+            <Text style={styles.modalTitle}>Select Petrol Pump</Text>
+            <Text style={styles.modalSub}>Choose the pump for this fuel request.</Text>
+            {linkedPumps.map((pump) => (
+              <Pressable
+                key={pump.id}
+                style={styles.pumpRow}
+                onPress={() => {
+                  setShowPumpPicker(false);
+                  router.push(href(`/(admin)/pumps/${pump.id}/request`));
+                }}
+              >
+                <Text style={styles.pumpName}>{pump.name}</Text>
+                <Text style={styles.pumpAddr}>{pump.address}</Text>
+              </Pressable>
+            ))}
+            <Button title="Cancel" variant="secondary" onPress={() => setShowPumpPicker(false)} />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }
@@ -128,6 +191,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase'
   },
   section: { marginBottom: 20 },
+  sectionLabel: { color: FuelColors.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 8 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  link: { color: FuelColors.primary, fontWeight: '700', fontSize: 12 },
   statsRow: { flexDirection: 'row', gap: 10 },
   card: { marginBottom: 10, padding: 12 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -135,4 +201,40 @@ const styles = StyleSheet.create({
   meta: { color: FuelColors.textSecondary, fontSize: 13, marginTop: 4 },
   date: { fontSize: 11, color: FuelColors.textMuted },
   empty: { padding: 20, color: FuelColors.textMuted, textAlign: 'center', fontSize: 13 },
+  inlineActions: { flexDirection: 'row', gap: 10, marginTop: 6 },
+  miniCta: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: FuelColors.border,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: FuelColors.surface,
+  },
+  miniCtaTxt: { color: FuelColors.primary, fontSize: 12, fontWeight: '700' },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.35)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: FuelColors.surface,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
+    gap: 10,
+    maxHeight: '70%',
+  },
+  modalTitle: { fontSize: 16, fontWeight: '800', color: FuelColors.text },
+  modalSub: { fontSize: 13, color: FuelColors.textSecondary, marginBottom: 6 },
+  pumpRow: {
+    borderWidth: 1,
+    borderColor: FuelColors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  pumpName: { fontSize: 14, fontWeight: '700', color: FuelColors.text },
+  pumpAddr: { fontSize: 12, color: FuelColors.textSecondary, marginTop: 2 },
 });

@@ -69,7 +69,7 @@ export default function PumpEmployeeProfile() {
         ) : null}
 
         <View style={styles.btnRow}>
-          <Button
+          {/* <Button
             title="Update Profile"
             variant="secondary"
             onPress={() => {
@@ -78,7 +78,7 @@ export default function PumpEmployeeProfile() {
               setOpen(true);
             }}
             style={{ marginBottom: 12 }}
-          />
+          /> */}
           <Button
             title="Sign Out"
             variant="outline"

@@ -7,6 +7,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,6 +25,7 @@ export default function EmployeeProfile() {
   const [name, setName] = useState(currentUser?.name ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   const onSave = async () => {
     if (!name.trim()) {
@@ -44,6 +46,11 @@ export default function EmployeeProfile() {
     }
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 700);
+  };
+
   return (
     <Screen>
       <Header title="My Profile" showBack={false} />
@@ -51,6 +58,9 @@ export default function EmployeeProfile() {
       <ScrollView
         contentContainerStyle={styles.body}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={FuelColors.primary} />
+        }
       >
         {/* Profile Header */}
         <View style={styles.header}>
@@ -80,7 +90,7 @@ export default function EmployeeProfile() {
         )}
 
         {/* Actions */}
-        <Button
+        {/* <Button
           title="Update Profile"
           onPress={() => {
             setName(currentUser?.name ?? '');
@@ -88,7 +98,7 @@ export default function EmployeeProfile() {
             setOpen(true);
           }}
           style={styles.primaryBtn}
-        />
+        /> */}
 
         <Button
           title="Sign Out"

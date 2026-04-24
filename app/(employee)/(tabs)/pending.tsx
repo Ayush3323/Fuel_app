@@ -74,7 +74,7 @@ export default function EmployeePending() {
           const co = getCompany(item.companyId);
           return (
             <Pressable
-              onPress={() => router.push(href(`/(employee)/fill/${item.id}`))}
+              onPress={() => router.push(href(`/(employee)/fill/${item.id}?returnTo=employee-pending`))}
             >
               <Card style={styles.card}>
                 <View style={styles.row}>

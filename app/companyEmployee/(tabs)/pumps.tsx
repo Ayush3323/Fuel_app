@@ -1,22 +1,31 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import {
-  Alert,
-  FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { href } from '@/src/utils/routerHref';
 import { FuelColors } from '@/constants/theme';
 import { Button, Card, Header, Input, Screen } from '@/src/components/ui';
 import { useApp } from '@/src/context/AppContext';
 import type { FuelType, Pump } from '@/src/types';
+import { href } from '@/src/utils/routerHref';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+const MAX_QTY_LITRES = 2000;
+const MAX_EXTRA_CASH = 20000;
+const VEHICLE_REGEX = /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/;
+
+function normalizeVehicleNo(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
 
 export default function PumpsTabRequest() {
   const router = useRouter();
@@ -33,13 +42,20 @@ export default function PumpsTabRequest() {
   const [fuel, setFuel] = useState<FuelType>('HSD');
   const [extraCash, setExtraCash] = useState('');
   const [notes, setNotes] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Default to first pump if available
-  useEffect(() => {
-    if (pumps.length > 0 && !selectedPump) {
-      setSelectedPump(pumps[0]);
-    }
-  }, [pumps, selectedPump]);
+  const normalizedVehicle = useMemo(() => normalizeVehicleNo(vehicleNo), [vehicleNo]);
+  const isVehicleValid = useMemo(() => VEHICLE_REGEX.test(normalizedVehicle), [normalizedVehicle]);
+  const qtyValue = useMemo(() => parseFloat(qty), [qty]);
+  const extraCashValue = useMemo(() => parseFloat(extraCash), [extraCash]);
+  const isQtyOverLimit = useMemo(
+    () => !isTankFull && Number.isFinite(qtyValue) && qtyValue > MAX_QTY_LITRES,
+    [isTankFull, qtyValue]
+  );
+  const isExtraCashOverLimit = useMemo(
+    () => Number.isFinite(extraCashValue) && extraCashValue > MAX_EXTRA_CASH,
+    [extraCashValue]
+  );
 
   // Autocomplete logic for vehicle number
   const vehicleHistory = useMemo(() => {
@@ -64,8 +80,8 @@ export default function PumpsTabRequest() {
   }, [vehicleNo, vehicleHistory]);
 
   const submit = () => {
-    const qValue = isTankFull ? 0 : parseFloat(qty);
-    const ec = parseFloat(extraCash) || 0;
+    const qValue = isTankFull ? 0 : qtyValue;
+    const ec = extraCashValue || 0;
     
     if (!selectedPump) {
       Alert.alert('Selection required', 'Please select a petrol pump');
@@ -75,8 +91,20 @@ export default function PumpsTabRequest() {
       Alert.alert('Check inputs', 'Enter vehicle number');
       return;
     }
+    if (!isVehicleValid) {
+      Alert.alert('Check inputs', 'Vehicle number format should look like: HR55AB1234');
+      return;
+    }
     if (!isTankFull && (!qValue || qValue <= 0)) {
       Alert.alert('Check inputs', 'Enter quantity in litres');
+      return;
+    }
+    if (!isTankFull && qValue > MAX_QTY_LITRES) {
+      Alert.alert('Quantity limit', `Fuel quantity cannot exceed ${MAX_QTY_LITRES} L`);
+      return;
+    }
+    if (ec > MAX_EXTRA_CASH) {
+      Alert.alert('Extra cash limit', `Extra cash cannot exceed ₹${MAX_EXTRA_CASH.toLocaleString('en-IN')}`);
       return;
     }
 
@@ -103,45 +131,92 @@ export default function PumpsTabRequest() {
     ]);
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 700);
+  };
+
   return (
     <Screen>
       <Header title="New Fuel Request" showBack={false} />
-      <ScrollView 
-        contentContainerStyle={styles.body} 
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+        style={styles.flex}
       >
-        <Text style={styles.co}>{company?.name}</Text>
+        <ScrollView 
+          contentContainerStyle={styles.body} 
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={FuelColors.primary} />
+          }
+        >
+          <Text style={styles.co}>{company?.name}</Text>
 
         <View style={styles.section}>
           <Text style={styles.label}>Select Petrol Pump</Text>
-          <Pressable onPress={() => setShowPumpPicker(true)}>
-            <Card style={styles.pickerCard}>
-              <View style={styles.pickerRow}>
-                <View style={styles.pickerTextContent}>
-                  {selectedPump ? (
-                    <>
-                      <Text style={styles.pickerVal}>{selectedPump.name}</Text>
-                      <Text style={styles.pickerSub}>{selectedPump.address}</Text>
-                    </>
-                  ) : (
-                    <Text style={styles.pickerPlaceholder}>Choose a petrol pump</Text>
-                  )}
+          <View style={styles.pickerWrap}>
+            <Pressable onPress={() => setShowPumpPicker((prev) => !prev)}>
+              <Card style={styles.pickerCard}>
+                <View style={styles.pickerRow}>
+                  <View style={styles.pickerTextContent}>
+                    {selectedPump ? (
+                      <>
+                        <Text style={styles.pickerVal}>{selectedPump.name}</Text>
+                        <Text style={styles.pickerSub}>{selectedPump.address}</Text>
+                      </>
+                    ) : (
+                      <Text style={styles.pickerPlaceholder}>Choose a petrol pump</Text>
+                    )}
+                  </View>
+                  <Ionicons
+                    name={showPumpPicker ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color={FuelColors.primary}
+                  />
                 </View>
-                <Ionicons name="chevron-down" size={20} color={FuelColors.primary} />
-              </View>
-            </Card>
-          </Pressable>
+              </Card>
+            </Pressable>
+            {showPumpPicker && (
+              <Card style={styles.dropdownCard}>
+                {pumps.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[styles.pumpItem, selectedPump?.id === item.id && styles.pumpItemSelected]}
+                    onPress={() => {
+                      setSelectedPump(item);
+                      setShowPumpPicker(false);
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.pumpName, selectedPump?.id === item.id && styles.pumpTextSelected]}>
+                        {item.name}
+                      </Text>
+                      <Text style={styles.pumpAddr}>{item.address}</Text>
+                    </View>
+                    {selectedPump?.id === item.id && (
+                      <Ionicons name="checkmark-circle" size={20} color={FuelColors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </Card>
+            )}
+          </View>
         </View>
 
         <View style={[styles.section, styles.inputWrap]}>
           <Input
             label="Vehicle number"
             value={vehicleNo}
-            onChangeText={setVehicleNo}
+            onChangeText={(t) => setVehicleNo(normalizeVehicleNo(t).slice(0, 10))}
             autoCapitalize="characters"
-            placeholder="e.g. HR55 XY 1234"
+            placeholder="e.g. HR55AB1234"
+            maxLength={10}
           />
+          {vehicleNo.trim().length > 0 && !isVehicleValid ? (
+            <Text style={styles.warn}>Enter valid format: HR55AB1234</Text>
+          ) : null}
           {vehicleSuggestions.length > 0 && (
             <View style={styles.suggestions}>
               {vehicleSuggestions.map((v) => (
@@ -195,6 +270,12 @@ export default function PumpsTabRequest() {
             </View>
             <Text style={[styles.tankLabel, isTankFull && styles.tankLabelActive]}>Tank Full Request</Text>
           </TouchableOpacity>
+          {isQtyOverLimit ? (
+            <Text style={styles.warn}>Enter valid quantity</Text>
+          ) : null}
+          {isExtraCashOverLimit ? (
+            <Text style={styles.warn}>Extra cash cannot be more than ₹{MAX_EXTRA_CASH.toLocaleString('en-IN')}</Text>
+          ) : null}
         </View>
 
         <View style={styles.section}>
@@ -227,51 +308,21 @@ export default function PumpsTabRequest() {
           />
         </View>
         
-        <View style={styles.btnPad}>
-          <Button title="Submit Request" onPress={submit} />
-        </View>
-      </ScrollView>
-
-      {/* Pump Selector Modal */}
-      <Modal visible={showPumpPicker} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select a Petrol Pump</Text>
-              <Pressable onPress={() => setShowPumpPicker(false)} style={styles.closeBtn}>
-                <Ionicons name="close" size={24} color={FuelColors.text} />
-              </Pressable>
-            </View>
-            <FlatList
-              data={pumps}
-              keyExtractor={item => item.id}
-              contentContainerStyle={{ paddingBottom: 30 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={[styles.pumpItem, selectedPump?.id === item.id && styles.pumpItemSelected]}
-                  onPress={() => {
-                    setSelectedPump(item);
-                    setShowPumpPicker(false);
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.pumpName, selectedPump?.id === item.id && styles.pumpTextSelected]}>{item.name}</Text>
-                    <Text style={styles.pumpAddr}>{item.address}</Text>
-                  </View>
-                  {selectedPump?.id === item.id && (
-                    <Ionicons name="checkmark-circle" size={20} color={FuelColors.primary} />
-                  )}
-                </TouchableOpacity>
-              )}
+          <View style={styles.btnPad}>
+            <Button
+              title="Submit Request"
+              onPress={submit}
+              disabled={isQtyOverLimit || isExtraCashOverLimit || !isVehicleValid}
             />
           </View>
-        </View>
-      </Modal>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   body: { padding: 16, paddingTop: 16, paddingBottom: 40 },
   co: { 
     marginBottom: 16, 
@@ -282,6 +333,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5
   },
   section: { marginBottom: 16 },
+  pickerWrap: {
+    position: 'relative',
+    zIndex: 30,
+  },
   label: {
     fontSize: 13,
     fontWeight: '700',
@@ -290,16 +345,28 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   pickerCard: { 
-    padding: 12, 
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderWidth: 1, 
     borderColor: FuelColors.border,
-    backgroundColor: FuelColors.surface
+    backgroundColor: FuelColors.surface,
   },
   pickerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   pickerTextContent: { flex: 1 },
-  pickerVal: { color: FuelColors.text, fontSize: 16, fontWeight: '700' },
-  pickerSub: { color: FuelColors.textSecondary, fontSize: 12, marginTop: 2 },
-  pickerPlaceholder: { color: FuelColors.textMuted, fontSize: 15 },
+  pickerVal: { color: FuelColors.text, fontSize: 15, fontWeight: '700' },
+  pickerSub: { color: FuelColors.textSecondary, fontSize: 11, marginTop: 1 },
+  pickerPlaceholder: { color: FuelColors.textMuted, fontSize: 14 },
+  dropdownCard: {
+    position: 'absolute',
+    top: 62,
+    left: 0,
+    right: 0,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: FuelColors.border,
+    zIndex: 40,
+    elevation: 8,
+  },
   
   inputWrap: { zIndex: 10, position: 'relative' },
   suggestions: {
@@ -326,6 +393,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   suggestionText: { color: FuelColors.text, fontWeight: '700', fontSize: 14 },
+  warn: { color: FuelColors.warning, fontSize: 12, fontWeight: '600', marginTop: 4, marginLeft: 2 },
   
   qtySection: { },
   inputRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
@@ -365,25 +433,9 @@ const styles = StyleSheet.create({
   
   btnPad: { marginTop: 8 },
   
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { 
-    backgroundColor: FuelColors.background, 
-    borderTopLeftRadius: 20, 
-    borderTopRightRadius: 20, 
-    maxHeight: '80%',
-  },
-  modalHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    padding: 16, 
-    borderBottomWidth: 1, 
-    borderBottomColor: FuelColors.border 
-  },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: FuelColors.text },
-  closeBtn: { padding: 4 },
   pumpItem: { 
-    padding: 16, 
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1, 
     borderBottomColor: FuelColors.border,
     flexDirection: 'row',

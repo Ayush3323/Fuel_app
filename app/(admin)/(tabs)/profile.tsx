@@ -62,7 +62,7 @@ export default function AdminProfile() {
         </Card>
 
         <View style={styles.btnRow}>
-          <Button
+          {/* <Button
             title="Update Profile"
             variant="secondary"
             onPress={() => {
@@ -71,7 +71,7 @@ export default function AdminProfile() {
               setOpen(true);
             }}
             style={{ marginBottom: 12 }}
-          />
+          /> */}
           <Button
             title="Log Out"
             variant="danger"
